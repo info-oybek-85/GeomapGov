@@ -26,9 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv(
+        "ALLOWED_HOSTS",
+        "fastappeal.uz,www.fastappeal.uz,localhost,127.0.0.1",
+    ).split(",") if h.strip()
+]
 
 
 # Application definition
@@ -194,4 +199,15 @@ CSRF_TRUSTED_ORIGINS = [
     "http://www.fastappeal.uz",
 ]
 
+# Nginx reverse-proxy ortida ishlaganimiz uchun
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
+# Cookie'lar faqat HTTPS orqali yuborilsin — CSRF token muammolarini oldini oladi
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# Ba'zi brauzerlarda login sahifasi kesh qilinib, eski CSRF token qolib ketmasin
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 kun
