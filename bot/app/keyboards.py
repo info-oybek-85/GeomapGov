@@ -119,29 +119,49 @@ class OrgCb(CallbackData, prefix="org"):
     org_id: str | None = None
 
 
-def organizations_kb(orgs: list[dict], page: int, has_prev: bool, has_next: bool) -> InlineKeyboardMarkup:
+def organizations_kb(
+    orgs: list[dict],
+    page: int,
+    has_prev: bool,
+    has_next: bool,
+    bilmayman_id: str | int | None = None,
+) -> InlineKeyboardMarkup:
     """
-    orgs: [{"id": "...", "name": "..."}]
+    orgs: [{"id": "...", "name": "..."}] — sahifadagi tashkilotlar (5 tagacha)
+    bilmayman_id: agar berilsa, har sahifada 1-tugma "🤷 Bilmayman" bo'ladi
     """
     kb = InlineKeyboardBuilder()
 
+    if bilmayman_id is not None:
+        kb.row(InlineKeyboardButton(
+            text="🤷 Bilmayman",
+            callback_data=OrgCb(action="pick", page=page, org_id=str(bilmayman_id)).pack(),
+        ))
+
     for org in orgs:
-        kb.button(
+        kb.row(InlineKeyboardButton(
             text=f"🏢 {org['name']}",
-            callback_data=OrgCb(action="pick", page=page, org_id=str(org["id"])).pack()
-        )
+            callback_data=OrgCb(action="pick", page=page, org_id=str(org["id"])).pack(),
+        ))
 
-    nav = InlineKeyboardBuilder()
+    nav_buttons: list[InlineKeyboardButton] = []
     if has_prev:
-        nav.button(text="⬅️ Oldingi", callback_data=OrgCb(action="page", page=page - 1).pack())
-    nav.button(text=f"📄 {page}", callback_data=OrgCb(action="noop", page=page).pack())
+        nav_buttons.append(InlineKeyboardButton(
+            text="⬅️ Oldingi",
+            callback_data=OrgCb(action="page", page=page - 1).pack(),
+        ))
     if has_next:
-        nav.button(text="Keyingi ➡️", callback_data=OrgCb(action="page", page=page + 1).pack())
+        nav_buttons.append(InlineKeyboardButton(
+            text="Keyingi ➡️",
+            callback_data=OrgCb(action="page", page=page + 1).pack(),
+        ))
+    if nav_buttons:
+        kb.row(*nav_buttons)
 
-    kb.adjust(1)  # har qatorda 1 tadan org
-    kb.attach(nav)
-    kb.button(text="❌ Bekor qilish", callback_data=OrgCb(action="cancel", page=page).pack())
-    kb.adjust(1)
+    kb.row(InlineKeyboardButton(
+        text="❌ Bekor qilish",
+        callback_data=OrgCb(action="cancel", page=page).pack(),
+    ))
 
     return kb.as_markup()
 

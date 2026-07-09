@@ -25,9 +25,12 @@ class ApiClient:
         self,
         session: aiohttp.ClientSession,
         access_token: str,
-        page: int = 1
+        page: int = 1,
+        page_size: int | None = None,
     ) -> Dict[str, Any]:
         url = f"{self.base_url}/organizations/?page={page}"
+        if page_size:
+            url += f"&page_size={page_size}"
         headers = {"Authorization": f"Bearer {access_token}"}
         async with session.get(url, headers=headers) as r:
             if r.status == 401:

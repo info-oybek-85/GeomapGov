@@ -21,6 +21,9 @@ router = Router()
 
 MAX_FILES = 10
 
+ORG_PAGE_SIZE = 5
+BILMAYMAN_NAME = "bilmayman"
+
 # ✅ Siz xohlagandek 50MB
 MAX_FILE_SIZE_MB = int(os.getenv("MAX_FILE_SIZE_MB", "50"))
 MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024
@@ -77,18 +80,21 @@ async def _expire_after(bot, chat_id: int, user_id: int, state: FSMContext, expi
         pass
 
 
-async def _touch_ttl(message: Message, state: FSMContext):
+async def _touch_ttl(message: Message, state: FSMContext, user_id: int | None = None):
     # TTL yangilash (Redis yo‘q bo‘lsa ham)
+    # callback ichidan chaqirilganda message.from_user = bot bo'ladi,
+    # shuning uchun user_id ni override qilish mumkin (call.from_user.id).
+    uid = user_id if user_id is not None else message.from_user.id
     expires_at = time.time() + FLOW_TTL_SECONDS
-    await state.update_data(expires_at=expires_at, telegram_id=message.from_user.id)
+    await state.update_data(expires_at=expires_at, telegram_id=uid)
 
-    key = _task_key(message)
+    key = (message.chat.id, uid)
     old = _EXPIRY_TASKS.get(key)
     if old and not old.done():
         old.cancel()
 
     _EXPIRY_TASKS[key] = asyncio.create_task(
-        _expire_after(message.bot, message.chat.id, message.from_user.id, state, expires_at)
+        _expire_after(message.bot, message.chat.id, uid, state, expires_at)
     )
 
 
@@ -128,45 +134,101 @@ async def _refresh_tokens(db: BotDB, api: ApiClient, telegram_id: int, user: dic
     return access
 
 
-async def _load_org_page(message: Message, state: FSMContext, db: BotDB, api: ApiClient, page: int, edit_from: Message | None = None):
-    telegram_id = message.from_user.id
-    user = await db.get_user(telegram_id)
-    if not user:
-        await state.clear()
-        await message.answer("Avval /start qilib ro‘yxatdan o‘ting.", reply_markup=menu_kb())
-        return
+async def _fetch_all_orgs(db: BotDB, api: ApiClient, telegram_id: int, user: dict) -> list[dict]:
+    """Barcha tashkilotlarni sahifama-sahifa yig'ib qaytaradi."""
+    all_items: list[dict] = []
+    page = 1
 
-    async def fetch(access_token: str):
+    async def fetch_page(access_token: str, p: int):
         async with aiohttp.ClientSession() as session:
-            return await api.list_organizations(session=session, access_token=access_token, page=page)
+            return await api.list_organizations(
+                session=session, access_token=access_token, page=p, page_size=50,
+            )
 
-    try:
-        data = await fetch(user["access_token"])
-    except ApiError as e:
-        if str(e) == "UNAUTHORIZED":
-            new_access = await _refresh_tokens(db, api, telegram_id, user)
-            data = await fetch(new_access)
-        else:
+    access = user["access_token"]
+    while True:
+        try:
+            data = await fetch_page(access, page)
+        except ApiError as e:
+            if str(e) == "UNAUTHORIZED":
+                access = await _refresh_tokens(db, api, telegram_id, user)
+                data = await fetch_page(access, page)
+            else:
+                raise
+
+        results = data.get("results") or data.get("items") or data.get("data") or []
+        for o in results:
+            all_items.append({
+                "id": o.get("id"),
+                "name": o.get("name") or o.get("title") or str(o.get("id")),
+            })
+
+        if not data.get("next"):
+            break
+        page += 1
+        if page > 100:  # xavfsizlik
+            break
+
+    return all_items
+
+
+async def _load_org_page(
+    message: Message,
+    state: FSMContext,
+    db: BotDB,
+    api: ApiClient,
+    page: int,
+    telegram_id: int,
+    edit_from: Message | None = None,
+):
+    data = await state.get_data()
+    all_orgs = data.get("all_orgs")
+    bilmayman_id = data.get("bilmayman_org_id")
+
+    if all_orgs is None:
+        user = await db.get_user(telegram_id)
+        if not user:
+            await state.clear()
+            await message.answer("Avval /start qilib ro‘yxatdan o‘ting.", reply_markup=menu_kb())
+            return
+
+        try:
+            items = await _fetch_all_orgs(db, api, telegram_id, user)
+        except ApiError as e:
             await message.answer(f"❌ Tashkilotlar yuklanmadi: {e}", reply_markup=menu_kb())
             await state.clear()
             return
 
-    results = data.get("results") or data.get("items") or data.get("data") or []
-    has_next = bool(data.get("next"))
-    has_prev = bool(data.get("previous"))
+        # "Bilmayman" tashkilotini ajratib olamiz
+        bilmayman_id = None
+        filtered: list[dict] = []
+        for o in items:
+            if (o["name"] or "").strip().lower() == BILMAYMAN_NAME:
+                bilmayman_id = o["id"]
+                continue
+            filtered.append(o)
 
-    orgs = []
-    for o in results:
-        orgs.append({
-            "id": o.get("id"),
-            "name": o.get("name") or o.get("title") or str(o.get("id")),
-        })
+        all_orgs = filtered
+        await state.update_data(all_orgs=all_orgs, bilmayman_org_id=bilmayman_id)
+
+    total = len(all_orgs)
+    total_pages = max(1, (total + ORG_PAGE_SIZE - 1) // ORG_PAGE_SIZE)
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * ORG_PAGE_SIZE
+    page_orgs = all_orgs[start:start + ORG_PAGE_SIZE]
+    has_prev = page > 1
+    has_next = page < total_pages
 
     await state.update_data(org_page=page)
 
     text = "🏢 Muammo qaysi tashkilotga tegishli? Tanlang:"
-
-    kb = organizations_kb(orgs=orgs, page=page, has_prev=has_prev, has_next=has_next)
+    kb = organizations_kb(
+        orgs=page_orgs,
+        page=page,
+        has_prev=has_prev,
+        has_next=has_next,
+        bilmayman_id=bilmayman_id,
+    )
 
     if edit_from:
         try:
@@ -392,7 +454,7 @@ async def _accept_location(message: Message, state: FSMContext, db: BotDB, api: 
         f"📍 Joylashuv qabul qilindi: {link}\n\nEndi tashkilotni tanlang:",
         reply_markup=ReplyKeyboardRemove(),
     )
-    await _load_org_page(message, state, db, api, page=1)
+    await _load_org_page(message, state, db, api, page=1, telegram_id=message.from_user.id)
 
 
 @router.message(ReportCreate.waiting_location, F.web_app_data)
@@ -435,12 +497,15 @@ async def report_after_location_ask_org(message: Message, state: FSMContext, db:
 
 @router.callback_query(ReportCreate.waiting_organization, OrgCb.filter())
 async def org_pick_or_page(call: CallbackQuery, callback_data: OrgCb, state: FSMContext, db: BotDB, api: ApiClient):
-    # TTL tekshiruv
+    # MUHIM: callback ichida call.message.from_user = bot bo'ladi.
+    # Haqiqiy foydalanuvchi id sini call.from_user dan olamiz.
     msg = call.message
+    telegram_id = call.from_user.id
+
     if not await _ensure_not_expired(msg, state):
         await call.answer()
         return
-    await _touch_ttl(msg, state)
+    await _touch_ttl(msg, state, user_id=telegram_id)
 
     action = callback_data.action
     page = int(callback_data.page or 1)
@@ -453,7 +518,7 @@ async def org_pick_or_page(call: CallbackQuery, callback_data: OrgCb, state: FSM
 
     if action == "page":
         await call.answer()
-        await _load_org_page(msg, state, db, api, page=page, edit_from=msg)
+        await _load_org_page(msg, state, db, api, page=page, telegram_id=telegram_id, edit_from=msg)
         return
 
     if action == "pick":
@@ -471,12 +536,22 @@ async def org_pick_or_page(call: CallbackQuery, callback_data: OrgCb, state: FSM
         lon = float(data.get("longitude"))
         link = maps_url(lat, lon)
 
+        # Tanlangan tashkilot nomini state cache dan topamiz
+        org_name = None
+        if str(data.get("bilmayman_org_id")) == str(org_id):
+            org_name = "Bilmayman"
+        else:
+            for o in (data.get("all_orgs") or []):
+                if str(o.get("id")) == str(org_id):
+                    org_name = o.get("name")
+                    break
+
         preview_text = (
             "📄 Murojaatni tasdiqlash\n\n"
             f"📝 Matn:\n{data.get('description','')}\n\n"
             f"📎 Fayllar soni: {len(files)}\n"
             f"📍 Joylashuv: {link}\n"
-            f"🏢 Organization: {org_id}\n\n"
+            f"🏢 Tashkilot: {org_name or org_id}\n\n"
             "Agar hammasi to‘g‘ri bo‘lsa: ✅ Yuborish\n"
             "Aks holda: ❌ Bekor qilish"
         )
