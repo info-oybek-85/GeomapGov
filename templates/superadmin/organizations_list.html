@@ -64,13 +64,6 @@
               <tr>
                 <td class="ps-4">
                   <div class="d-flex px-2 py-1 align-items-center">
-                    <div>
-                      {% if org.organization_icon %}
-                        <img src="{{ org.organization_icon.url }}" class="avatar avatar-sm me-3" alt="org-icon">
-                      {% else %}
-                        <img src="{% static 'img/team-2.jpg' %}" class="avatar avatar-sm me-3" alt="org-icon">
-                      {% endif %}
-                    </div>
                     <div class="d-flex flex-column justify-content-center">
                       <h6 class="mb-0 text-sm"><a href="{% url 'dashboard:organization_detail' org.id %}">{{ org.name }}</a></h6>
                       <p class="text-xs text-secondary mb-0"><a href="{% url 'dashboard:organization_detail' org.id %}"/>{{ org.description|default:"-"|truncatechars:70 }}</a></p>

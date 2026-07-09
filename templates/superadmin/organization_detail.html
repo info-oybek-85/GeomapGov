@@ -10,19 +10,11 @@
   <div class="col-lg-4 mb-4">
     <div class="card">
       <div class="card-body">
-        <div class="d-flex align-items-center">
-          {% if org.organization_icon %}
-            <img src="{{ org.organization_icon.url }}" class="avatar avatar-xl me-3" alt="org-icon">
-          {% else %}
-            <img src="{% static 'assets/img/team-2.jpg' %}" class="avatar avatar-xl me-3" alt="org-icon">
-          {% endif %}
-
-          <div>
-            <h5 class="mb-0">{{ org.name }}</h5>
-            <p class="text-sm text-muted mb-0">
-              {% if org.is_active %}Faol{% else %}Nofaol{% endif %}
-            </p>
-          </div>
+        <div>
+          <h5 class="mb-0">{{ org.name }}</h5>
+          <p class="text-sm text-muted mb-0">
+            {% if org.is_active %}Faol{% else %}Nofaol{% endif %}
+          </p>
         </div>
 
         <hr>

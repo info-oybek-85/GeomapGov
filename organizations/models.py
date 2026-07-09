@@ -5,7 +5,6 @@ from django.conf import settings
 class Organization(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    organization_icon = models.ImageField(upload_to='organizations/', null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
 
