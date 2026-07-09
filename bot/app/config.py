@@ -9,6 +9,7 @@ class Settings:
     bot_token: str
     api_base_url: str
     webapp_location_url: str
+    webapp_my_reports_map_url: str
 
 def get_settings() -> Settings:
     bot_token = os.getenv("BOT_TOKEN", "").strip()
@@ -16,6 +17,10 @@ def get_settings() -> Settings:
     webapp_location_url = os.getenv(
         "WEBAPP_LOCATION_URL",
         "https://fastappeal.uz/webapp/location-picker/",
+    ).strip()
+    webapp_my_reports_map_url = os.getenv(
+        "WEBAPP_MY_REPORTS_MAP_URL",
+        "https://fastappeal.uz/webapp/my-reports-map/",
     ).strip()
 
     if not bot_token:
@@ -27,4 +32,5 @@ def get_settings() -> Settings:
         bot_token=bot_token,
         api_base_url=api_base_url,
         webapp_location_url=webapp_location_url,
+        webapp_my_reports_map_url=webapp_my_reports_map_url,
     )

@@ -1,4 +1,5 @@
 import os
+import html
 import json
 import time
 import asyncio
@@ -595,6 +596,16 @@ async def report_submit_confirmed(message: Message, state: FSMContext, db: BotDB
 
     files_meta = (data.get("media") or _init_media_state())["files"]
 
+    # tanlangan tashkilot nomini state cache dan topamiz (chiroyli xabar uchun)
+    org_name = None
+    if str(data.get("bilmayman_org_id")) == str(organization_id):
+        org_name = "Bilmayman"
+    else:
+        for o in (data.get("all_orgs") or []):
+            if str(o.get("id")) == str(organization_id):
+                org_name = o.get("name")
+                break
+
     await message.answer("⏳ Yuborilyapti… iltimos biroz kuting.")
 
     tg_files = []
@@ -653,7 +664,33 @@ async def report_submit_confirmed(message: Message, state: FSMContext, db: BotDB
             return
 
     await state.clear()
+
+    _STATUS_TITLE = {
+        "new": "🟥 Yangi",
+        "in_progress": "🟨 Jarayonda",
+        "resolved": "🟩 Hal qilindi",
+        "rejected": "⬛ Rad etildi",
+    }
+    rid = str(created.get("id") or "")
+    short = rid[:8] if rid else "—"
+    status_raw = str(created.get("status") or "new").lower()
+    status_pretty = _STATUS_TITLE.get(status_raw, status_raw)
+
+    success_text = (
+        "🎉 <b>Murojaatingiz muvaffaqiyatli qabul qilindi!</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"🆔 ID: <code>{short}</code>\n"
+        f"📊 Holati: <b>{status_pretty}</b>\n"
+        f"📎 Fayllar: <b>{len(files_meta)}</b> ta\n"
+        f"🏢 Tashkilot: <b>{html.escape(str(org_name or organization_id))}</b>\n"
+        f"📍 Joylashuv: <a href=\"{maps_url(lat, lon)}\">Xaritada ko‘rish</a>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🙏 Murojaatingiz uchun rahmat! Ko‘rib chiqilgach xabar beramiz.\n"
+        "Holatini kuzatish uchun <b>«Murojaatlarim»</b> bo‘limiga kiring."
+    )
     await message.answer(
-        f"✅ Murojaat saqlandi!\nID: {created.get('id')}\nStatus: {created.get('status')}",
-        reply_markup=menu_kb()
+        success_text,
+        reply_markup=menu_kb(),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
     )

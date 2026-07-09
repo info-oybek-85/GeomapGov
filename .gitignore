@@ -1,6 +1,41 @@
-env
-migrations
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+env/
+venv/
+
+# Django
+*.log
+local_settings.py
+
+# Environment
 .env
-media
-staticfiles
+.env.*
+!.env.example
+bot/.env
+
+# Databases (production data — never commit!)
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.sqlite3-*
+bot/bot_users.sqlite3
+
+# Media / static builds
+media/
+staticfiles/
+
+# Migrations — YOKI serverga qo'shishga xohlasangiz olib tashlang
+# migrations/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Docker
+*.pid

@@ -70,18 +70,28 @@ def confirm_kb() -> ReplyKeyboardMarkup:
 
 # ------------ Inline browse keyboards ------------
 
-def reports_nav_kb(has_prev: bool, has_next: bool, can_resolve: bool) -> InlineKeyboardMarkup:
+def reports_nav_kb(
+    has_prev: bool,
+    has_next: bool,
+    can_resolve: bool,
+    access_token: str | None = None,
+) -> InlineKeyboardMarkup:
     b = InlineKeyboardBuilder()
 
+    row1: list[InlineKeyboardButton] = []
     if has_prev:
-        b.button(text="⬅️", callback_data="repnav:prev")
-
-    b.button(text="📎 Fayllar", callback_data="repnav:files")
-
+        row1.append(InlineKeyboardButton(text="⬅️", callback_data="repnav:prev"))
+    row1.append(InlineKeyboardButton(text="📎 Fayllar", callback_data="repnav:files"))
     if has_next:
-        b.button(text="➡️", callback_data="repnav:next")
+        row1.append(InlineKeyboardButton(text="➡️", callback_data="repnav:next"))
+    b.row(*row1)
 
-    b.adjust(3)
+    if access_token:
+        webapp_url = f"{get_settings().webapp_my_reports_map_url}?token={access_token}"
+        b.row(InlineKeyboardButton(
+            text="🗺 Xaritada ko‘rish",
+            web_app=WebAppInfo(url=webapp_url),
+        ))
 
     if can_resolve:
         b.row(InlineKeyboardButton(text="✅ Hal bo‘ldi", callback_data="repnav:resolve"))

@@ -46,6 +46,11 @@ urlpatterns = [
         TemplateView.as_view(template_name="webapp/location_picker.html"),
         name="webapp_location_picker",
     ),
+    path(
+        "webapp/my-reports-map/",
+        TemplateView.as_view(template_name="webapp/my_reports_map.html"),
+        name="webapp_my_reports_map",
+    ),
 
 ]
 

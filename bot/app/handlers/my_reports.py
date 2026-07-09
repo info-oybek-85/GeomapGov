@@ -136,26 +136,27 @@ async def fetch_reports_with_refresh(message: Message, db: BotDB, api: ApiClient
     telegram_id = message.from_user.id
     user = await db.get_user(telegram_id)
     if not user:
-        return None, "Avval /start qilib ro‘yxatdan o‘ting."
+        return None, None, "Avval /start qilib ro‘yxatdan o‘ting."
 
     async def fetch(access: str):
         async with aiohttp.ClientSession() as session:
             return await api.my_reports(session, access, resolved=resolved)
 
+    access_used = user["access_token"]
     try:
-        payload = await fetch(user["access_token"])
+        payload = await fetch(access_used)
     except ApiError as e:
         if str(e) == "UNAUTHORIZED":
-            new_access = await ensure_fresh_token(db, api, telegram_id)
-            payload = await fetch(new_access)
+            access_used = await ensure_fresh_token(db, api, telegram_id)
+            payload = await fetch(access_used)
         else:
-            return None, f"Xatolik: {e}"
+            return None, None, f"Xatolik: {e}"
 
     items, err = normalize_items(payload)
     if err:
-        return None, err
+        return None, None, err
 
-    return items, None
+    return items, access_used, None
 
 
 async def show_current_report(message_or_query, state: FSMContext):
@@ -163,6 +164,7 @@ async def show_current_report(message_or_query, state: FSMContext):
     reports = data.get("reports") or []
     idx = int(data.get("idx", 0))
     resolved_list = bool(data.get("resolved", False))
+    access_token = data.get("access_token")
 
     if not reports:
         if isinstance(message_or_query, CallbackQuery):
@@ -186,6 +188,7 @@ async def show_current_report(message_or_query, state: FSMContext):
         has_prev=idx > 0,
         has_next=idx < len(reports) - 1,
         can_resolve=can_resolve,
+        access_token=access_token,
     )
 
     if isinstance(message_or_query, CallbackQuery):
@@ -208,7 +211,7 @@ async def show_current_report(message_or_query, state: FSMContext):
 @router.message(F.text.startswith("Murojaatlarim"))
 async def my_reports(message: Message, state: FSMContext, db: BotDB, api: ApiClient):
     await state.clear()
-    items, err = await fetch_reports_with_refresh(message, db, api, resolved=False)
+    items, access_token, err = await fetch_reports_with_refresh(message, db, api, resolved=False)
     if err:
         await message.answer(f"❌ {err}", reply_markup=menu_kb())
         return
@@ -217,14 +220,14 @@ async def my_reports(message: Message, state: FSMContext, db: BotDB, api: ApiCli
         return
 
     await state.set_state(BrowseReports.browsing)
-    await state.update_data(reports=items, idx=0, resolved=False)
+    await state.update_data(reports=items, idx=0, resolved=False, access_token=access_token)
     await show_current_report(message, state)
 
 
 @router.message(F.text.startswith("Tugallangan murojaatlarim"))
 async def my_resolved_reports(message: Message, state: FSMContext, db: BotDB, api: ApiClient):
     await state.clear()
-    items, err = await fetch_reports_with_refresh(message, db, api, resolved=True)
+    items, access_token, err = await fetch_reports_with_refresh(message, db, api, resolved=True)
     if err:
         await message.answer(f"❌ {err}", reply_markup=menu_kb())
         return
@@ -233,7 +236,7 @@ async def my_resolved_reports(message: Message, state: FSMContext, db: BotDB, ap
         return
 
     await state.set_state(BrowseReports.browsing)
-    await state.update_data(reports=items, idx=0, resolved=True)
+    await state.update_data(reports=items, idx=0, resolved=True, access_token=access_token)
     await show_current_report(message, state)
 
 
