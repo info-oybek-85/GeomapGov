@@ -11,6 +11,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
 
 from .config import get_settings
+from .problem_catalog import PROBLEM_CATALOG, get_category
+
+
+PROBLEM_PAGE_SIZE = 4
 
 
 def menu_kb() -> ReplyKeyboardMarkup:
@@ -174,6 +178,89 @@ def organizations_kb(
     ))
 
     return kb.as_markup()
+
+class ProbCatCb(CallbackData, prefix="pcat"):
+    action: str          # "pick" | "page"
+    page: int = 1
+    key: str = ""        # category key when action=pick
+
+
+class ProbCb(CallbackData, prefix="pprob"):
+    action: str          # "pick" | "page" | "back"
+    key: str = ""        # category key
+    page: int = 1
+    idx: int = 0         # problem index in category (for pick)
+
+
+def problem_categories_kb(page: int = 1) -> InlineKeyboardMarkup:
+    """8 kategoriya, 4 tadan sahifasida."""
+    kb = InlineKeyboardBuilder()
+    total = len(PROBLEM_CATALOG)
+    total_pages = max(1, (total + PROBLEM_PAGE_SIZE - 1) // PROBLEM_PAGE_SIZE)
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * PROBLEM_PAGE_SIZE
+    for c in PROBLEM_CATALOG[start:start + PROBLEM_PAGE_SIZE]:
+        kb.row(InlineKeyboardButton(
+            text=c["title"],
+            callback_data=ProbCatCb(action="pick", page=page, key=c["key"]).pack(),
+        ))
+
+    nav: list[InlineKeyboardButton] = []
+    if page > 1:
+        nav.append(InlineKeyboardButton(
+            text="⬅️ Oldingi",
+            callback_data=ProbCatCb(action="page", page=page - 1).pack(),
+        ))
+    if page < total_pages:
+        nav.append(InlineKeyboardButton(
+            text="Keyingi ➡️",
+            callback_data=ProbCatCb(action="page", page=page + 1).pack(),
+        ))
+    if nav:
+        kb.row(*nav)
+
+    return kb.as_markup()
+
+
+def problems_in_category_kb(cat_key: str, page: int = 1) -> InlineKeyboardMarkup:
+    """Tanlangan kategoriya ichidagi muammolar, 4 tadan sahifasida."""
+    kb = InlineKeyboardBuilder()
+    cat = get_category(cat_key)
+    problems = cat["problems"] if cat else []
+
+    total = len(problems)
+    total_pages = max(1, (total + PROBLEM_PAGE_SIZE - 1) // PROBLEM_PAGE_SIZE)
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * PROBLEM_PAGE_SIZE
+
+    for i, text in enumerate(problems[start:start + PROBLEM_PAGE_SIZE], start=start):
+        # Tugmaga to'liq matn sig'masa qisqartamiz — original matn stateda saqlanadi
+        label = text if len(text) <= 60 else text[:57] + "…"
+        kb.row(InlineKeyboardButton(
+            text=label,
+            callback_data=ProbCb(action="pick", key=cat_key, page=page, idx=i).pack(),
+        ))
+
+    nav: list[InlineKeyboardButton] = []
+    if page > 1:
+        nav.append(InlineKeyboardButton(
+            text="⬅️ Oldingi",
+            callback_data=ProbCb(action="page", key=cat_key, page=page - 1).pack(),
+        ))
+    if page < total_pages:
+        nav.append(InlineKeyboardButton(
+            text="Keyingi ➡️",
+            callback_data=ProbCb(action="page", key=cat_key, page=page + 1).pack(),
+        ))
+    if nav:
+        kb.row(*nav)
+
+    kb.row(InlineKeyboardButton(
+        text="🔙 Kategoriyalarga",
+        callback_data=ProbCb(action="back", key=cat_key).pack(),
+    ))
+    return kb.as_markup()
+
 
 def phone_request_kb() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(

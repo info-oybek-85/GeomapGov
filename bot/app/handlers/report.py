@@ -13,6 +13,13 @@ from aiogram.fsm.context import FSMContext
 from ..states import ReportCreate
 from ..keyboards import menu_kb, cancel_kb, media_kb, location_kb, confirm_kb
 from ..keyboards import organizations_kb, OrgCb
+from ..keyboards import (
+    problem_categories_kb,
+    problems_in_category_kb,
+    ProbCatCb,
+    ProbCb,
+)
+from ..problem_catalog import get_category
 from ..db import BotDB
 from ..api import ApiClient, ApiError, now_iso
 from ..utils import guess_content_type, safe_filename
@@ -253,13 +260,126 @@ async def report_start(message: Message, state: FSMContext, db: BotDB):
     await state.update_data(media=_init_media_state())
     await _touch_ttl(message, state)
 
-    await message.answer("Muammoni matn ko‘rinishida yozing:", reply_markup=cancel_kb())
+    # Reply keyboard — bekor qilish
+    await message.answer(
+        "📝 <b>Muammoni yozing yoki tanlang</b>\n\n"
+        "Muammoni matn ko‘rinishida yozib yuboring, "
+        "yoki quyidagi tayyor ro‘yxatdan tanlang:",
+        reply_markup=cancel_kb(),
+        parse_mode="HTML",
+    )
+    # Inline keyboard — kategoriyalar
+    await message.answer(
+        "Muammo kategoriyasini tanlang:",
+        reply_markup=problem_categories_kb(page=1),
+    )
 
 
 @router.message(ReportCreate.waiting_description, F.text == "❌ Bekor qilish")
 async def cancel_from_description(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("❌ Murojaat bekor qilindi.", reply_markup=menu_kb())
+
+
+async def _proceed_to_media(message: Message, state: FSMContext, description: str):
+    """Description saqlanadi va media yig'ish bosqichiga o'tadi."""
+    await state.update_data(description=description)
+    await state.set_state(ReportCreate.collecting_media)
+    await message.answer(
+        f"✅ Muammo tanlandi:\n<i>{html.escape(description)}</i>\n\n"
+        "Endi xohlasangiz rasm/video/ovoz/audio/pdf/file yuboring.\n"
+        "Tayyor bo‘lsangiz: ✅ Joylashuv yuborish ni bosing.",
+        reply_markup=media_kb(),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(ReportCreate.waiting_description, ProbCatCb.filter())
+async def problem_category_callback(call: CallbackQuery, callback_data: ProbCatCb, state: FSMContext):
+    if not await _ensure_not_expired(call.message, state):
+        await call.answer()
+        return
+    await _touch_ttl(call.message, state, user_id=call.from_user.id)
+
+    if callback_data.action == "page":
+        try:
+            await call.message.edit_reply_markup(
+                reply_markup=problem_categories_kb(page=callback_data.page)
+            )
+        except Exception:
+            pass
+        await call.answer()
+        return
+
+    if callback_data.action == "pick":
+        cat = get_category(callback_data.key)
+        if not cat:
+            await call.answer("Kategoriya topilmadi", show_alert=True)
+            return
+        try:
+            await call.message.edit_text(
+                f"<b>{html.escape(cat['title'])}</b>\nMuammoni tanlang:",
+                reply_markup=problems_in_category_kb(cat["key"], page=1),
+                parse_mode="HTML",
+            )
+        except Exception:
+            await call.message.answer(
+                f"<b>{html.escape(cat['title'])}</b>\nMuammoni tanlang:",
+                reply_markup=problems_in_category_kb(cat["key"], page=1),
+                parse_mode="HTML",
+            )
+        await call.answer()
+        return
+
+    await call.answer()
+
+
+@router.callback_query(ReportCreate.waiting_description, ProbCb.filter())
+async def problem_pick_callback(call: CallbackQuery, callback_data: ProbCb, state: FSMContext):
+    if not await _ensure_not_expired(call.message, state):
+        await call.answer()
+        return
+    await _touch_ttl(call.message, state, user_id=call.from_user.id)
+
+    if callback_data.action == "back":
+        try:
+            await call.message.edit_text(
+                "Muammo kategoriyasini tanlang:",
+                reply_markup=problem_categories_kb(page=1),
+            )
+        except Exception:
+            await call.message.answer(
+                "Muammo kategoriyasini tanlang:",
+                reply_markup=problem_categories_kb(page=1),
+            )
+        await call.answer()
+        return
+
+    if callback_data.action == "page":
+        try:
+            await call.message.edit_reply_markup(
+                reply_markup=problems_in_category_kb(callback_data.key, page=callback_data.page)
+            )
+        except Exception:
+            pass
+        await call.answer()
+        return
+
+    if callback_data.action == "pick":
+        cat = get_category(callback_data.key)
+        if not cat or callback_data.idx < 0 or callback_data.idx >= len(cat["problems"]):
+            await call.answer("Muammo topilmadi", show_alert=True)
+            return
+        problem_text = cat["problems"][callback_data.idx]
+        await call.answer("✅ Tanlandi")
+        try:
+            await call.message.delete()
+        except Exception:
+            pass
+        await _proceed_to_media(call.message, state, problem_text)
+        return
+
+    await call.answer()
 
 
 @router.message(ReportCreate.waiting_description, F.text)
@@ -273,14 +393,7 @@ async def report_got_description(message: Message, state: FSMContext):
         await message.answer("Matn juda qisqa. Iltimos muammoni batafsilroq yozing.", reply_markup=cancel_kb())
         return
 
-    await state.update_data(description=text)
-    await state.set_state(ReportCreate.collecting_media)
-
-    await message.answer(
-        "Endi xohlasangiz rasm/video/ovoz/audio/pdf/file yuboring.\n"
-        "Tayyor bo‘lsangiz: ✅ Joylashuv yuborish ni bosing.\n\n",
-        reply_markup=media_kb()
-    )
+    await _proceed_to_media(message, state, text)
 
 
 @router.message(ReportCreate.collecting_media, F.text == "❌ Bekor qilish")
