@@ -250,8 +250,13 @@ def _is_org_admin(user):
     # ✅ superuser ham kiradi
     if user.is_superuser:
         return True
-    # ✅ Dispatcher ham org-admin hisoblanadi
-    return (getattr(user, "user_type", "") or "").lower() == "dispatcher"
+    # ✅ Dispatcher (user_type) — legacy
+    if (getattr(user, "user_type", "") or "").lower() == "dispatcher":
+        return True
+    # ✅ OrganizationMember orqali admin belgilangan bo'lsa ham kiradi
+    return OrganizationMember.objects.filter(
+        user=user, role__iexact=OrganizationMember.ROLE_ADMIN
+    ).exists()
 
 
 
@@ -283,8 +288,11 @@ def _get_user_organization(user):
 
 
 @login_required
-@user_passes_test(_is_org_admin, login_url="/login/")
 def organization_admin_dashboard(request):
+    # user_passes_test o'rniga inline tekshiruv — infinite redirect loop bo'lmasligi uchun
+    if not _is_org_admin(request.user):
+        return render(request, "organization_admin/no_organization.html", status=403)
+
     org = _get_user_organization(request.user)
     if not org:
         # organization topilmasa - dashboard'ni ochmasin
