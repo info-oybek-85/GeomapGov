@@ -139,7 +139,7 @@
       </a>
     </li>
 
-  {% elif request.user.is_authenticated and request.user.user_type == "DISPATCHER" %}
+  {% elif request.user.is_authenticated and is_effective_org_admin %}
 
     <li class="nav-item">
       <a class="nav-link {% if request.resolver_match.url_name == 'org-dashboard' %}active{% endif %}"
