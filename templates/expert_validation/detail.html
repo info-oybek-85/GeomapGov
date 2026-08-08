@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Ekspert tekshiruvi #{{ item.pk }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row mb-4"><div class="col-12"><a class="text-white" href="{% url 'dashboard:expert_validation_queue' %}">← Navbatga qaytish</a><h4 class="text-white mt-2">Ekspert tekshiruvi #{{ item.pk }}</h4></div></div>
+  {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} text-white">{{ message }}</div>{% endfor %}{% endif %}
+  <div class="row g-4">
+    <div class="col-lg-5"><div class="card h-100"><div class="card-header"><h5>AI tahlili</h5></div><div class="card-body">
+      <p class="text-sm text-uppercase text-secondary mb-1">Murojaat matni</p><p class="mb-4" style="white-space:pre-wrap">{{ item.text }}</p>
+      <dl class="row text-sm"><dt class="col-5">AI tashkiloti</dt><dd class="col-7">{{ item.predicted_organization|default:"-" }}</dd><dt class="col-5">Fuqaro tanlovi</dt><dd class="col-7">{{ item.selected_organization|default:"-" }}</dd><dt class="col-5">Ishonchlilik</dt><dd class="col-7">{{ item.confidence|floatformat:3 }}</dd><dt class="col-5">Kalit iboralar</dt><dd class="col-7">{{ item.matched_keywords|join:", "|default:"-" }}</dd><dt class="col-5">Yaratilgan</dt><dd class="col-7">{{ item.created_at|date:"d.m.Y H:i" }}</dd></dl>
+      {% if item.recommendations %}<hr><p class="text-sm text-uppercase text-secondary">TOP tavsiyalar</p><pre class="bg-gray-100 p-3 border-radius-lg" style="white-space:pre-wrap">{{ item.recommendations }}</pre>{% endif %}
+    </div></div></div>
+    <div class="col-lg-7"><div class="card"><div class="card-header"><h5>Ekspert xulosasi</h5></div><div class="card-body">
+      <form method="post">{% csrf_token %}
+        <div class="mb-3"><label class="form-label">Asosiy muammo</label><select name="primary_problem" class="form-select" required><option value="">Tanlang</option>{% for value,label in problem_choices %}<option value="{{ value }}" {% if item.expert_primary_problem == value %}selected{% endif %}>{{ label }} ({{ value }})</option>{% endfor %}</select></div>
+        <div class="mb-3"><label class="form-label">Ikkilamchi muammolar</label><input name="secondary_problems" value="{{ secondary_text }}" class="form-control" placeholder="Masalan: ECO_TREE_FALL, ROAD_DAMAGE"><small class="text-muted">Vergul bilan ajrating.</small></div>
+        <div class="mb-3"><label class="form-label">Asosiy tashkilot</label><select name="primary_organization" class="form-select" required><option value="">Tanlang</option>{% for org in organizations %}<option value="{{ org.pk }}" {% if initial_org_id == org.id %}selected{% endif %}>{{ org.name }}</option>{% endfor %}</select></div>
+        <div class="mb-3"><label class="form-label">Hamkor tashkilotlar</label><select name="supporting_organizations" class="form-select" multiple size="6">{% for org in organizations %}<option value="{{ org.pk }}" {% if org.pk|stringformat:'s' in supporting_ids %}selected{% endif %}>{{ org.name }}</option>{% endfor %}</select></div>
+        <div class="mb-3"><label class="form-label">Ustuvorlik</label><select name="priority" class="form-select"><option value="">Tanlang</option><option value="critical" {% if item.expert_priority == 'critical' %}selected{% endif %}>Kritik</option><option value="high" {% if item.expert_priority == 'high' %}selected{% endif %}>Yuqori</option><option value="medium" {% if item.expert_priority == 'medium' %}selected{% endif %}>O‘rta</option><option value="low" {% if item.expert_priority == 'low' %}selected{% endif %}>Past</option></select></div>
+        <div class="mb-3"><label class="form-label">Ekspert izohi</label><textarea name="expert_note" class="form-control" rows="3">{{ item.expert_note }}</textarea></div>
+        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="save_next" value="1" id="saveNext" checked><label class="form-check-label" for="saveNext">Saqlangach keyingi tekshirilmagan yozuvni ochish</label></div>
+        <div class="d-flex flex-wrap gap-2"><button name="action" value="confirm" class="btn btn-success mb-0">✓ AI taxminini tasdiqlash</button><button name="action" value="correct" class="btn btn-info mb-0">✎ Tuzatib saqlash</button><button name="action" value="reject" class="btn btn-danger mb-0" formnovalidate>Rad etish</button></div>
+      </form>
+    </div></div></div>
+  </div>
+</div>
+{% endblock %}

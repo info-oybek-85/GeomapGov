@@ -1,0 +1,2 @@
+﻿record_id,text,primary_problem,secondary_problems,primary_organization,supporting_organizations,priority,latitude,longitude,district,source_type,expert_verified,split,notes
+51c337ca-fd0a-401f-9f78-bc07c5bdc80a,Svet yo‘q,ELEC_OUTAGE,,Energetika vazirligi,,Yuqori,41.384148,69.316795,,real,Yo‘q,validation,label_source=report_organization; detected=ELEC_OUTAGE

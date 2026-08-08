@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Hal qilingan murojaatlar | SmartGeoAI{% endblock %}
+{% block breadcrumb %}Ijrochi kabineti{% endblock %}
+{% block page_title %}Hal qilingan murojaatlar{% endblock %}
+{% block content %}
+<div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center"><div><h6 class="mb-0">Mening hal qilingan murojaatlarim</h6><div class="text-sm text-secondary">Jami: {{ total_count }} ta</div></div><form method="get" class="d-flex gap-2"><input class="form-control" name="q" value="{{ q }}" placeholder="Qidirish"><button class="btn btn-primary mb-0">Qidirish</button></form></div></div>
+<div class="card"><div class="card-body">
+{% for a in assignments %}<div class="border rounded p-3 mb-3"><div class="d-flex justify-content-between"><b>{{ a.report.title|default:"Murojaat" }}</b><span class="badge bg-gradient-success">Hal qilingan</span></div><p class="text-sm mt-2">{{ a.report.description|truncatechars:220 }}</p><div class="text-xs text-secondary mb-2">Yopilgan vaqt: {{ a.report.resolved_at|date:"d.m.Y H:i"|default:"-" }}</div><a class="btn btn-sm btn-outline-primary mb-0" href="{% url 'dashboard:org_report_detail' a.report.id %}">Ko‘rish</a></div>{% empty %}<div class="text-secondary">Siz hal qilgan murojaatlar hozircha yo‘q.</div>{% endfor %}
+</div></div>
+{% endblock %}

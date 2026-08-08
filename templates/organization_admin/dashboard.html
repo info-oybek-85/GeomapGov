@@ -1,0 +1,885 @@
+{% extends "base.html" %} {% load static %} {% block title %}Organization Admin
+| GeomapGov{% endblock %} {% block breadcrumb %}Boshqaruv paneli{% endblock %}
+{% block content %}
+
+<style>
+  .muted {
+    color: #8898aa;
+  }
+  .section-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .section-title h6 {
+    margin: 0;
+  }
+  .section-title .hint {
+    font-size: 12px;
+    color: #8898aa;
+  }
+
+  .kpi-row .card {
+    height: 150px;
+  }
+  .kpi-row .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .kpi-title {
+    letter-spacing: 0.04em;
+  }
+
+  .chipbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: #fff;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chip .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .chip .x {
+    cursor: pointer;
+    color: #8898aa;
+  }
+
+  #map {
+    height: 720px;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .form-check-input {
+    appearance: auto !important;
+    -webkit-appearance: checkbox !important;
+    width: 18px !important;
+    height: 18px !important;
+    cursor: pointer;
+    margin-top: 0 !important;
+  }
+
+  .map-header {
+    padding: 16px 18px !important;
+    background: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .map-header .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: end;
+    justify-content: flex-end;
+  }
+  .map-header .filters .field {
+    min-width: 190px;
+  }
+  .map-header .filters .field.search {
+    min-width: 320px;
+    flex: 1 1 360px;
+  }
+  .map-header .filters .actions {
+    display: flex;
+    gap: 10px;
+  }
+  .map-header .chipbar {
+    margin-top: 10px;
+    align-items: center;
+  }
+  .map-header .chip {
+    background: #f7fafc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .map-header .chip.ms-auto {
+    margin-left: auto !important;
+  }
+
+  .leaflet-popup-content {
+    margin: 12px 14px;
+  }
+  .popup-card {
+    min-width: 360px;
+  }
+  .popup-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 6px 0 2px 0;
+  }
+  .popup-kv {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .popup-kv .k {
+    color: #8898aa;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .popup-kv .v {
+    font-weight: 600;
+  }
+  .popup-desc {
+    font-size: 13px;
+    color: #525f7f;
+    line-height: 1.35;
+    margin: 8px 0 10px 0;
+  }
+
+  .decision-card { border: 0; box-shadow: 0 10px 30px rgba(50, 50, 93, .08); }
+  .metric-pill { display:inline-flex; align-items:center; gap:7px; border-radius:999px; padding:7px 11px; font-size:12px; background:#f7fafc; }
+  .worker-rank { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:700; background:#eef2ff; color:#5e72e4; }
+  .recommendation-item { border-left:4px solid #5e72e4; background:#f8f9fe; border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+  .recommendation-item.danger { border-left-color:#f5365c; }
+  .recommendation-item.warning { border-left-color:#fb6340; }
+  .recommendation-item.success { border-left-color:#2dce89; }
+  .deadline-row { border-bottom:1px solid rgba(0,0,0,.06); padding:12px 0; }
+  .deadline-row:last-child { border-bottom:0; }
+  .monitor-anchor { scroll-margin-top: 90px; }
+
+  @media (max-width: 992px) {
+    #map {
+      height: 560px;
+    }
+    .popup-card {
+      min-width: 300px;
+    }
+  }
+</style>
+
+<!-- ===================== KPI ROW ===================== -->
+<div class="row kpi-row mb-4">
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div
+              class="text-xs text-uppercase font-weight-bold muted kpi-title"
+            >
+              Jami shikoyatlar
+            </div>
+            <div class="h3 font-weight-bolder mb-0">{{ total_count }}</div>
+            <div class="text-xs muted mt-1">Faqat: <b>{{ org.name }}</b></div>
+          </div>
+          <div
+            class="icon icon-shape bg-gradient-primary shadow-primary text-center rounded-circle"
+          >
+            <i class="ni ni-collection text-lg opacity-10"></i>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between mt-2 text-xs">
+          <span class="muted">Bugun</span
+          ><span class="font-weight-bold">{{ today_count }}</span>
+        </div>
+        <div class="d-flex justify-content-between text-xs">
+          <span class="muted">So‘nggi 7 kun</span
+          ><span class="font-weight-bold">{{ week_count }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div
+              class="text-xs text-uppercase font-weight-bold muted kpi-title"
+            >
+              Yangi
+            </div>
+            <div class="h3 font-weight-bolder mb-0">
+              {{ status_counts_global.new|default:0 }}
+            </div>
+          </div>
+          <div
+            class="icon icon-shape bg-gradient-danger shadow-danger text-center rounded-circle"
+          >
+            <i class="ni ni-bell-55 text-lg opacity-10"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div
+              class="text-xs text-uppercase font-weight-bold muted kpi-title"
+            >
+              Jarayonda
+            </div>
+            <div class="h3 font-weight-bolder mb-0">
+              {{ status_counts_global.in_progress|default:0 }}
+            </div>
+          </div>
+          <div
+            class="icon icon-shape bg-gradient-warning shadow-warning text-center rounded-circle"
+          >
+            <i class="ni ni-settings text-lg opacity-10"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div
+              class="text-xs text-uppercase font-weight-bold muted kpi-title"
+            >
+              Hal qilingan
+            </div>
+            <div class="h3 font-weight-bolder mb-0">
+              {{ status_counts_global.resolved|default:0 }}
+            </div>
+            <div class="text-xs muted mt-1">Yakunlangan</div>
+          </div>
+          <div
+            class="icon icon-shape bg-gradient-success shadow-success text-center rounded-circle"
+          >
+            <i class="ni ni-check-bold text-lg opacity-10"></i>
+          </div>
+        </div>
+        <div class="text-xs muted mt-2">Natija ko‘rsatkichi</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MAP SECTION ===================== -->
+
+<div class="row mb-4">
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card h-100"><div class="card-body"><div class="text-xs text-uppercase text-secondary">Muddati o‘tgan</div><div class="h3 text-danger mb-1">{{ overdue_count }}</div><div class="text-xs text-secondary">Faol, ammo deadline o‘tgan</div></div></div></div>
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card h-100"><div class="card-body"><div class="text-xs text-uppercase text-secondary">Tasdiq kutilmoqda</div><div class="h3 text-warning mb-1">{{ pending_confirmation_count }}</div><div class="text-xs text-secondary">Fuqaro javobi kutilmoqda</div></div></div></div>
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card h-100"><div class="card-body"><div class="text-xs text-uppercase text-secondary">Bugun hal qilindi</div><div class="h3 text-success mb-1">{{ resolved_today_count }}</div><div class="text-xs text-secondary">O‘rtacha ijro: {{ avg_execution_minutes }} daqiqa</div></div></div></div>
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card h-100"><div class="card-body"><div class="text-xs text-uppercase text-secondary">O‘rtacha umumiy vaqt</div><div class="h3 mb-1">{{ avg_total_minutes }} daqiqa</div><div class="text-xs text-secondary">Qabulgacha: {{ avg_accept_minutes }} daqiqa</div></div></div></div>
+</div>
+
+<!-- ===================== DECISION SUPPORT ===================== -->
+<div id="monitoring" class="row mb-4 monitor-anchor">
+  <div class="col-xl-8 mb-4">
+    <div class="card decision-card h-100">
+      <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-1">Operativ monitoring</h6>
+          <p class="text-sm text-secondary mb-0">Muddat yaqinlashgan va kechikkan vazifalar</p>
+        </div>
+        <span class="metric-pill"><i class="fas fa-shield-alt"></i> SLA: {{ sla_compliance_rate }}%</span>
+      </div>
+      <div class="card-body pt-3">
+        {% for item in urgent_assignments %}
+        <div class="deadline-row d-flex justify-content-between align-items-center gap-3">
+          <div class="flex-grow-1">
+            <div class="font-weight-bold text-sm">{{ item.title }}</div>
+            <div class="text-xs text-secondary">{{ item.worker }} · {{ item.status_label }}</div>
+          </div>
+          <div class="text-end">
+            {% if item.is_overdue %}
+              <span class="badge bg-gradient-danger">{{ item.minutes_overdue }} daqiqa kechikdi</span>
+            {% else %}
+              <span class="badge bg-gradient-warning">{{ item.minutes_left }} daqiqa qoldi</span>
+            {% endif %}
+            <div class="mt-1"><a class="text-xs font-weight-bold" href="/org-admin/reports/{{ item.report_id }}/">Batafsil</a></div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5 text-secondary">
+          <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+          <div>Deadline belgilangan faol vazifa mavjud emas.</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4 mb-4">
+    <div id="ai-tavsiyalar" class="card decision-card h-100 monitor-anchor">
+      <div class="card-header pb-0">
+        <h6 class="mb-1">AI tavsiyalar</h6>
+        <p class="text-sm text-secondary mb-0">Joriy holat asosidagi boshqaruv tavsiyalari</p>
+      </div>
+      <div class="card-body pt-3">
+        {% for rec in ai_recommendations %}
+        <div class="recommendation-item {{ rec.level }}">
+          <div class="font-weight-bold text-sm mb-1">{{ rec.title }}</div>
+          <div class="text-xs text-secondary" style="line-height:1.5">{{ rec.text }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="xodimlar-reytingi" class="row mb-4 monitor-anchor">
+  <div class="col-xl-7 mb-4">
+    <div class="card decision-card h-100">
+      <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-1">Xodimlar samaradorligi</h6>
+          <p class="text-sm text-secondary mb-0">Bajarilgan ishlar, tezlik va kechikishlar bo‘yicha reyting</p>
+        </div>
+        <a href="{% url 'dashboard:org_users' %}" class="btn btn-sm btn-outline-primary mb-0">Barcha xodimlar</a>
+      </div>
+      <div class="card-body pt-3">
+        {% for worker in top_workers %}
+        <div class="d-flex align-items-center gap-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+          <div class="worker-rank">{{ forloop.counter }}</div>
+          <div class="flex-grow-1">
+            <div class="font-weight-bold text-sm">{{ worker.name }}</div>
+            <div class="text-xs text-secondary">{{ worker.completed_total }}/{{ worker.assigned_total }} bajarilgan · O‘rtacha {{ worker.avg_minutes }} daqiqa</div>
+            <div class="progress mt-2" style="height:6px"><div class="progress-bar" role="progressbar" style="width:{{ worker.completion_rate }}%"></div></div>
+          </div>
+          <div class="text-end">
+            <div class="font-weight-bold">{{ worker.completion_rate }}%</div>
+            {% if worker.overdue_total %}<span class="badge bg-gradient-danger">{{ worker.overdue_total }} kechikkan</span>{% else %}<span class="badge bg-gradient-success">SLA yaxshi</span>{% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5 text-secondary">Hali xodimlarga vazifa biriktirilmagan.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5 mb-4">
+    <div id="hisobotlar" class="card decision-card h-100 monitor-anchor">
+      <div class="card-header pb-0"><h6 class="mb-1">Natijadorlik ko‘rsatkichlari</h6><p class="text-sm text-secondary mb-0">Rahbar uchun qisqa ijro xulosasi</p></div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between py-3 border-bottom"><span class="text-sm">Murojaatlarni hal etish darajasi</span><b>{{ resolution_rate }}%</b></div>
+        <div class="d-flex justify-content-between py-3 border-bottom"><span class="text-sm">SLA talabiga muvofiqlik</span><b>{{ sla_compliance_rate }}%</b></div>
+        <div class="d-flex justify-content-between py-3 border-bottom"><span class="text-sm">O‘rtacha qabul qilish</span><b>{{ avg_accept_minutes }} daqiqa</b></div>
+        <div class="d-flex justify-content-between py-3 border-bottom"><span class="text-sm">O‘rtacha ijro vaqti</span><b>{{ avg_execution_minutes }} daqiqa</b></div>
+        <div class="d-flex justify-content-between py-3"><span class="text-sm">O‘rtacha umumiy vaqt</span><b>{{ avg_total_minutes }} daqiqa</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="geo-monitoring" class="card mb-4 monitor-anchor">
+  <div class="card-header map-header">
+    <div class="d-flex flex-column gap-2">
+      <div
+        class="d-flex flex-column flex-xl-row align-items-xl-end justify-content-between gap-3"
+      >
+        <form method="get" id="mapFilterForm" class="w-100">
+          <div class="filters">
+            <!-- ✅ Organization fixed -->
+            <div class="field">
+              <label class="form-label text-xs mb-1">Tashkilot</label>
+              <div
+                class="form-control form-control-sm"
+                style="background: #f7fafc"
+              >
+                <b>{{ org.name }}</b>
+              </div>
+            </div>
+
+            <div class="field search">
+              <label class="form-label text-xs mb-1">Qidiruv</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"
+                  ><i class="fas fa-search"></i
+                ></span>
+                <input
+                  class="form-control"
+                  name="q"
+                  value="{{ q }}"
+                  placeholder="Matn / foydalanuvchi "
+                />
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="form-label text-xs mb-1">Status</label>
+              <div class="dropdown w-100">
+                <button
+                  class="btn btn-sm btn-outline-secondary w-100 mb-0"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Status tanlash
+                </button>
+                <div
+                  class="dropdown-menu p-3"
+                  style="min-width: 260px; max-height: 320px; overflow: auto"
+                >
+                  {% for key,label in status_options %}
+                  <div class="form-check">
+                    <input
+                      class="form-check-input status-check"
+                      type="checkbox"
+                      value="{{ key }}"
+                      id="st_sel_{{ key }}"
+                      {%
+                      if
+                      not
+                      selected_statuses
+                      or
+                      key
+                      in
+                      selected_statuses
+                      %}checked{%
+                      endif
+                      %}
+                    />
+                    <label
+                      class="form-check-label text-sm"
+                      for="st_sel_{{ key }}"
+                      >{{ label }}</label
+                    >
+                  </div>
+                  {% endfor %}
+
+                  <hr class="horizontal dark my-2" />
+                  <div class="d-flex gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary mb-0 w-100"
+                      onclick="selectAllStatuses(true)"
+                    >
+                      Hammasi
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary mb-0 w-100"
+                      onclick="selectAllStatuses(false)"
+                    >
+                      Tozalash
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-sm btn-primary mb-0" type="submit">
+                <i class="fas fa-filter me-1"></i> Qo'llash
+              </button>
+              <a class="btn btn-sm btn-outline-secondary mb-0" href="">
+                Ortga qaytarish
+              </a>
+            </div>
+          </div>
+
+          <div class="chipbar">
+            <span class="chip"
+              ><span class="dot" style="background: #5e72e4"></span>
+              <b>{{ org.name }}</b></span
+            >
+
+            {% if q %}
+            <span class="chip"
+              ><span class="dot" style="background: #11cdef"></span> Qidiruv:
+              <b>{{ q }}</b></span
+            >
+            {% endif %} {% if selected_statuses %}
+            <span class="chip"
+              ><span class="dot" style="background: #fb6340"></span> Status:
+              <b>{{ selected_statuses|join:", " }}</b></span
+            >
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body pt-3">
+    <!-- Map visibility toggles -->
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+      <div class="text-xs text-uppercase muted" style="letter-spacing: 0.04em">
+        Xaritada ko‘rsatish:
+      </div>
+
+      <!-- ✅ Default: hammasi checked -->
+      <label class="d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          class="form-check-input m-0"
+          type="checkbox"
+          id="st_new"
+          checked
+          onchange="toggleStatus('new', this.checked)"
+        />
+        <span class="badge bg-gradient-danger">Yangi</span>
+      </label>
+
+      <label class="d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          class="form-check-input m-0"
+          type="checkbox"
+          id="st_sent"
+          checked
+          onchange="toggleStatus('sent', this.checked)"
+        />
+        <span class="badge bg-gradient-primary">Yuborildi</span>
+      </label>
+
+      <label class="d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          class="form-check-input m-0"
+          type="checkbox"
+          id="st_read"
+          checked
+          onchange="toggleStatus('read', this.checked)"
+        />
+        <span class="badge bg-gradient-info">O‘qildi</span>
+      </label>
+
+      <label class="d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          class="form-check-input m-0"
+          type="checkbox"
+          id="st_in_progress"
+          checked
+          onchange="toggleStatus('in_progress', this.checked)"
+        />
+        <span class="badge bg-gradient-warning text-dark">Jarayonda</span>
+      </label>
+
+      <label class="d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          class="form-check-input m-0"
+          type="checkbox"
+          id="st_resolved"
+          checked
+          onchange="toggleStatus('resolved', this.checked)"
+        />
+        <span class="badge bg-gradient-success">Hal qilingan</span>
+      </label>
+
+      <label class="d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          class="form-check-input m-0"
+          type="checkbox"
+          id="st_rejected"
+          checked
+          onchange="toggleStatus('rejected', this.checked)"
+        />
+        <span class="badge bg-gradient-dark">Rad etilgan</span>
+      </label>
+
+      <label class="d-inline-flex align-items-center gap-2 mb-0">
+        <input
+          class="form-check-input m-0"
+          type="checkbox"
+          id="st_redirected"
+          checked
+          onchange="toggleStatus('redirected', this.checked)"
+        />
+        <span class="badge bg-gradient-secondary">Yo‘naltirilgan</span>
+      </label>
+
+      <button
+        class="btn btn-sm btn-outline-secondary mb-0 ms-auto"
+        type="button"
+        onclick="resetMapView()"
+      >
+        Xaritani to'g'irlash
+      </button>
+    </div>
+
+    <div id="map"></div>
+  </div>
+</div>
+
+<!-- ===================== CHARTS ===================== -->
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header pb-0">
+        <div class="section-title">
+          <h6>Status bo‘yicha taqsimot</h6>
+          <span class="hint">Hozirgi filterlar bo‘yicha</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="height: 320px">
+          <canvas id="chartStatus"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header pb-0">
+        <div class="section-title">
+          <h6>7 kunlik trend</h6>
+          <span class="hint">Kunlik shikoyatlar</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="height: 320px">
+          <canvas id="chartTrend"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css"
+/>
+<script src="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.js"></script>
+
+<script src="{% static 'js/plugins/chartjs.min.js' %}"></script>
+
+<script>
+  const POINTS = {{ points|safe }};
+  const DEFAULT_CENTER = [41.3111, 69.2797];
+  const DEFAULT_ZOOM = 12;
+
+  let map, layerGroup;
+  const markersByStatus = {};
+
+  // ✅ Org admin default: hamma status ko‘rinsin
+  const statusVisibility = {
+    new: true,
+    sent: true,
+    read: true,
+    accepted: true,
+    assigned: true,
+    in_progress: true,
+    resolved: true,
+    rejected: true,
+    redirected: true
+  };
+
+  const REPORT_DETAIL_URL_TEMPLATE =
+    "{% url 'dashboard:org_report_detail' '00000000-0000-0000-0000-000000000000' %}";
+
+  function fillColor(status) {
+    switch (status) {
+      case "new": return "#f5365c";
+      case "sent": return "#5e72e4";
+      case "read": return "#11cdef";
+      case "accepted": return "#2dce89";
+      case "assigned": return "#fb6340";
+      case "in_progress": return "#fbcf33";
+      case "resolved": return "#2dce89";
+      case "rejected": return "#172b4d";
+      case "redirected": return "#8898aa";
+      default: return "#5e72e4";
+    }
+  }
+
+  function badgeClass(status) {
+    if (status === "new") return "bg-gradient-danger";
+    if (status === "sent") return "bg-gradient-primary";
+    if (status === "read") return "bg-gradient-info";
+    if (status === "accepted" || status === "resolved") return "bg-gradient-success";
+    if (status === "assigned" || status === "in_progress") return "bg-gradient-warning";
+    if (status === "rejected") return "bg-gradient-dark";
+    return "bg-gradient-secondary";
+  }
+
+  function safeText(x) {
+    if (x === null || x === undefined) return "";
+    return String(x)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function truncate(str, n) {
+    const s = (str || "").trim();
+    if (!s) return "";
+    if (s.length <= n) return s;
+    return s.slice(0, n - 1) + "…";
+  }
+
+  function popupHtml(p) {
+    const detailUrl = REPORT_DETAIL_URL_TEMPLATE.replace(
+      "00000000-0000-0000-0000-000000000000",
+      p.id
+    );
+
+    const created = p.created_at ? new Date(p.created_at).toLocaleString() : "-";
+
+    const fullName = (p.user_full_name || "").trim();
+    const username = (p.user_username || "").trim();
+    const phone = (p.user_phone || "").trim();
+    const fallback = (p.user || "").toString().trim();
+    const who = fullName || username || phone || fallback || "-";
+
+    const desc = truncate(p.description || "", 80) || "-";
+
+    return `
+      <div class="popup-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="badge ${badgeClass(p.status)}" style="font-size:12px;">
+            ${safeText(p.status_label || p.status)}
+          </span>
+          <small class="text-muted">${safeText(created)}</small>
+        </div>
+
+        <div class="popup-title">Shikoyat #${safeText(p.id)}</div>
+
+        <div class="popup-kv">
+          <div class="k">Tashkilot</div>
+          <div class="v">${safeText(p.org || "-")}</div>
+        </div>
+
+        <div class="popup-kv">
+          <div class="k">Yuborgan</div>
+          <div class="v">${safeText(who)}</div>
+        </div>
+
+        <div class="popup-desc">${safeText(desc)}</div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <a href="${detailUrl}"
+             style="display:inline-block;padding:8px 14px;background:#5e72e4;color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">
+            Batafsil
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  function initMap() {
+    map = L.map("map", {
+      fullscreenControl: true,
+      fullscreenControlOptions: { position: "topleft" }
+    }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    layerGroup = L.layerGroup().addTo(map);
+
+    Object.keys(statusVisibility).forEach(s => (markersByStatus[s] = []));
+
+    if (POINTS.length) {
+      POINTS.forEach(p => {
+        if (p.lat === null || p.lng === null || p.lat === undefined || p.lng === undefined) return;
+
+        const marker = L.circleMarker([p.lat, p.lng], {
+          radius: 9,
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.86,
+          color: "rgba(0,0,0,.55)",
+          fillColor: fillColor(p.status)
+        });
+
+        marker.bindPopup(popupHtml(p), { maxWidth: 520 });
+
+        if (statusVisibility[p.status]) marker.addTo(layerGroup);
+        (markersByStatus[p.status] || []).push(marker);
+      });
+
+      fitToVisiblePoints();
+    }
+
+    setTimeout(() => map.invalidateSize(), 350);
+    window.addEventListener("resize", () => map.invalidateSize());
+  }
+
+  function fitToVisiblePoints() {
+    const visiblePoints = POINTS.filter(p => !!statusVisibility[p.status]);
+    if (!visiblePoints.length) {
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+      return;
+    }
+    if (visiblePoints.length === 1) {
+      map.setView([visiblePoints[0].lat, visiblePoints[0].lng], 13);
+      return;
+    }
+    const bounds = L.latLngBounds(visiblePoints.map(p => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
+  }
+
+  function resetMapView() { fitToVisiblePoints(); }
+
+  function toggleStatus(status, visible) {
+    statusVisibility[status] = visible;
+    (markersByStatus[status] || []).forEach(m => {
+      if (visible) m.addTo(layerGroup);
+      else layerGroup.removeLayer(m);
+    });
+    // view ham moslashsin
+    fitToVisiblePoints();
+  }
+
+  function selectAllStatuses(on) {
+    document.querySelectorAll(".status-check").forEach(cb => (cb.checked = on));
+  }
+
+  document.addEventListener("submit", (e) => {
+    if (e.target && e.target.id === "mapFilterForm") {
+      e.target.querySelectorAll("input[name='status'][data-dyn='1']").forEach(x => x.remove());
+      document.querySelectorAll(".status-check:checked").forEach(cb => {
+        const inp = document.createElement("input");
+        inp.type = "hidden";
+        inp.name = "status";
+        inp.value = cb.value;
+        inp.setAttribute("data-dyn", "1");
+        e.target.appendChild(inp);
+      });
+    }
+  });
+
+  function initCharts() {
+    const statusLabels = {{ chart_status_labels|safe }};
+    const statusValues = {{ chart_status_values_filtered|safe }};
+    const daysLabels = {{ chart_days_labels|safe }};
+    const daysValues = {{ chart_days_values|safe }};
+
+    const ctx1 = document.getElementById("chartStatus").getContext("2d");
+    new Chart(ctx1, {
+      type: "bar",
+      data: { labels: statusLabels, datasets: [{ label: "Soni", data: statusValues, borderWidth: 1 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } }
+    });
+
+    const ctx2 = document.getElementById("chartTrend").getContext("2d");
+    new Chart(ctx2, {
+      type: "line",
+      data: { labels: daysLabels, datasets: [{ label: "Kunlik shikoyatlar", data: daysValues, tension: 0.35, borderWidth: 2, pointRadius: 3, fill: false }] },
+      options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initMap();
+    initCharts();
+    resetMapView();
+  });
+</script>
+
+{% endblock %}

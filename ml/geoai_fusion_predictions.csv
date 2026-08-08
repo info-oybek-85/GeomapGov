@@ -1,0 +1,16 @@
+text,lat,lon,time,category,predicted,confidence
+axlat hid tarqatmoqda,41.329,69.291,2026-04-17,waste,waste,0.8125
+transport tirbandligi kuchli,41.316,69.276,2026-04-02,traffic,traffic,0.6225
+yashil hudud kamaymoqda,41.319,69.271,2026-04-12,ecology,ecology,0.7225
+yo‘l chetlari buzilgan,41.31,69.276,2026-04-14,road,road,0.8625
+axlat konteyner to‘lib ketgan,41.331,69.293,2026-04-21,waste,waste,0.8225
+axlat konteyner to‘lib ketgan,41.322,69.284,2026-04-04,waste,waste,0.8
+yo‘l yoritgichi ishlamaydi,41.313,69.278,2026-04-04,road,road,0.905
+yo‘l buzilgan,41.313,69.278,2026-04-13,road,road,0.94
+svetofor ishlamaydi,41.315,69.275,2026-04-10,traffic,traffic,0.77
+yo‘lda chuqur ko‘paygan,41.311,69.279,2026-04-07,road,road,0.89
+svetofor ishlamayapti,41.315,69.275,2026-04-02,traffic,traffic,0.7325
+yo‘l chuqurga to‘la,41.311,69.279,2026-04-24,road,road,0.8875
+transport tirbandligi yuqori,41.316,69.276,2026-04-22,traffic,traffic,0.74
+daraxt qurib qolgan,41.318,69.27,2026-04-20,ecology,ecology,0.5
+ko‘cha ifloslangan,41.326,69.288,2026-04-11,waste,waste,0.5225

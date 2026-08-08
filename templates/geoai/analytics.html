@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}GeoAI Analytics — Build 9{% endblock %}
+{% block breadcrumb %}GeoAI ilmiy tahlil / Build 9{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root{--navy:#163b70;--blue:#3868e8;--muted:#6b7280;--soft:#f5f8fd}
+  .science-card{border:0;border-radius:18px;box-shadow:0 10px 28px rgba(31,48,83,.08);overflow:hidden}
+  .metric-card{min-height:128px;background:linear-gradient(145deg,#fff,#f7f9fd)}
+  .metric-label{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7b88a1}
+  .metric-value{font-size:2rem;font-weight:850;color:#243b64;line-height:1.15}
+  .metric-note{font-size:.76rem;color:#8290a8;margin-top:6px}
+  .section-title{font-size:1rem;font-weight:800;color:#253b63;margin:0}
+  .formula{font-family:Georgia,serif;background:linear-gradient(90deg,#f5f7fb,#fbfcff);border:1px solid #e8edf6;border-radius:13px;padding:13px;color:#263d68}
+  #geoaiMap,#smartMap{height:560px;border-radius:16px;overflow:hidden;border:1px solid #e7ebf3}
+  .chart-wrap{height:320px;position:relative}
+  .chart-wrap.tall{height:380px}
+  .chart-wrap.priority{height:300px}
+  .priority-summary{background:linear-gradient(135deg,#eef4ff,#ffffff);border:1px solid #dbe7ff;border-radius:14px;padding:14px}
+  .priority-summary .number{font-size:1.55rem;font-weight:850;color:#163b70}
+  .leaflet-control-layers{border-radius:10px!important;box-shadow:0 6px 20px rgba(20,50,90,.15)!important}
+  .badge-soft{padding:.45rem .7rem;border-radius:999px;font-size:.72rem;font-weight:750}
+  .level-high{background:#fee2e2;color:#b91c1c}.level-medium{background:#fef3c7;color:#a16207}.level-low{background:#dcfce7;color:#15803d}
+  .matrix-table td,.matrix-table th{text-align:center;min-width:54px;padding:.62rem}.matrix-table td{font-weight:750;background:#f8faff}.matrix-table .diag{background:#dbeafe;color:#1d4ed8}
+  .scientific-note{border-left:4px solid #f59e0b;background:#fffbeb;padding:12px 15px;border-radius:8px;color:#7c5b10;font-size:.82rem}
+  .nav-pills .nav-link{border-radius:10px;font-weight:700;color:#52637e}.nav-pills .nav-link.active{background:#3868e8}
+  .component-grid{display:grid;grid-template-columns:repeat(6,minmax(95px,1fr));gap:8px;margin-top:10px}
+  .component-pill{background:#f7f9fc;border:1px solid #e6ebf4;border-radius:10px;padding:7px;text-align:center;font-size:.72rem}
+  .smart-kpi{background:linear-gradient(145deg,#f0f7ff,#fff);border:1px solid #d9e8ff;border-radius:15px;padding:15px;height:100%}
+  .smart-kpi .value{font-size:1.7rem;font-weight:850;color:#163b70}
+  .decision-high{border-left:5px solid #dc2626}.decision-medium{border-left:5px solid #f59e0b}.decision-low{border-left:5px solid #22c55e}
+  .smart-toolbar{background:#f7faff;border:1px solid #dce8fb;border-radius:14px;padding:14px}
+  .smart-status{display:inline-flex;align-items:center;gap:7px;padding:.45rem .75rem;border-radius:999px;background:#dcfce7;color:#166534;font-weight:750;font-size:.75rem}
+  .smart-status:before{content:"";width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15)}
+  .report-card{border:1px solid #dce7f7;border-radius:16px;padding:22px;height:100%;background:linear-gradient(145deg,#f7faff,#fff)}
+  .report-icon{width:52px;height:52px;border-radius:14px;background:#e8efff;color:#3868e8;display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:850}
+  .retrain-panel{border:1px solid #dbe7ff;border-radius:15px;padding:16px;background:linear-gradient(135deg,#eef4ff,#fff)}
+  .comparison-up{color:#15803d}.comparison-down{color:#b91c1c}
+  @media(max-width:1100px){.component-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} text-white mb-3" role="alert">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-1 text-dark">GeoAI ilmiy-analitik platformasi</h4>
+    <div class="text-sm text-muted">1–4-ilmiy yangiliklar: GeoAI klassifikatsiyasi, GeoPriority, GeoRisk va SMART-ONLINE qarorlarni qo‘llab-quvvatlash</div>
+  </div>
+  <span class="badge bg-gradient-primary px-3 py-2">GeoAI SMART-ONLINE v9.0</span>
+</div>
+
+<div class="row mb-3">
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card science-card metric-card"><div class="card-body"><div class="metric-label">Tahlil qilingan murojaatlar</div><div class="metric-value">{{ total }}</div><div class="metric-note">GeoAI va GeoPriority hisoblari</div></div></div></div>
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card science-card metric-card"><div class="card-body"><div class="metric-label">Model aniqligi</div><div class="metric-value">{% if model_metrics.available %}{{ model_metrics.accuracy|floatformat:3 }}{% else %}—{% endif %}</div><div class="metric-note">Test to‘plamidagi Accuracy</div></div></div></div>
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card science-card metric-card"><div class="card-body"><div class="metric-label">Macro ROC–AUC</div><div class="metric-value">{% if model_metrics.available %}{{ model_metrics.roc_auc_macro_ovr|floatformat:3 }}{% else %}—{% endif %}</div><div class="metric-note">One-vs-Rest baholash</div></div></div></div>
+  <div class="col-xl-3 col-sm-6 mb-3"><div class="card science-card metric-card"><div class="card-body"><div class="metric-label">Yuqori ustuvor</div><div class="metric-value">{{ counts.high|default:0 }}</div><div class="metric-note">Pᵢ ≥ 0.70 bo‘lgan murojaatlar</div></div></div></div>
+</div>
+
+{% if model_metrics.sample_warning %}
+<div class="scientific-note mb-3"><b>Ilmiy izoh:</b> ko‘rsatilgan klassifikatsiya metrikalari {{ model_metrics.dataset_size }} ta belgilangan yozuv asosida hisoblangan. Himoya va maqola uchun natijalarni kattaroq, mustaqil test to‘plami va k-fold cross-validation bilan tasdiqlash talab etiladi.</div>
+{% endif %}
+
+<div class="card science-card mb-4">
+  <div class="card-body">
+    <ul class="nav nav-pills mb-4" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#map-tab" type="button">GeoAI xarita</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#metrics-tab" type="button">Model metrikalari</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#features-tab" type="button">Belgilar tahlili</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#priority-tab" type="button">Ustuvorlik tahlili</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#risk-tab" type="button">Xavf tahlili</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#smart-tab" type="button">SMART-ONLINE</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#reports-tab" type="button">Hisobotlar</button></li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="map-tab">
+        <div class="formula mb-3">Xᵢ = [αGᵢ* ∥ βTᵢ* ∥ γEᵢ] → RF(Xᵢ) → Ĉᵢ, &nbsp; Confᵢ = max P(Cₖ|Xᵢ)</div>
+        <form class="row g-2 mb-3">
+          <div class="col-lg-3 col-md-6"><select name="category" class="form-select" aria-label="Kategoriya bo‘yicha filtr"><option value="">Barcha kategoriyalar</option>{% for c in categories %}<option value="{{ c }}" {% if selected_category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+          <div class="col-lg-2 col-md-6"><select name="priority" class="form-select" aria-label="Ustuvorlik bo‘yicha filtr"><option value="">Barcha ustuvorliklar</option><option value="high" {% if selected_priority == 'high' %}selected{% endif %}>Yuqori</option><option value="medium" {% if selected_priority == 'medium' %}selected{% endif %}>O‘rta</option><option value="low" {% if selected_priority == 'low' %}selected{% endif %}>Past</option></select></div>
+          <div class="col-lg-2 col-md-6"><select name="risk" class="form-select" aria-label="Xavf darajasi bo‘yicha filtr"><option value="">Barcha xavflar</option><option value="high" {% if selected_risk == 'high' %}selected{% endif %}>Yuqori xavf</option><option value="medium" {% if selected_risk == 'medium' %}selected{% endif %}>O‘rta xavf</option><option value="low" {% if selected_risk == 'low' %}selected{% endif %}>Past xavf</option></select></div>
+          <div class="col-lg-2 col-md-6"><input type="date" name="date_from" value="{{ selected_date_from }}" class="form-control" title="Boshlanish sanasi" aria-label="Boshlanish sanasi"></div>
+          <div class="col-lg-2 col-md-6"><input type="date" name="date_to" value="{{ selected_date_to }}" class="form-control" title="Tugash sanasi" aria-label="Tugash sanasi"></div>
+          <div class="col-lg-1 col-md-6"><button class="btn btn-primary w-100 mb-0">Filtr</button></div>
+        </form>
+        <div id="geoaiMap"></div>
+      </div>
+
+      <div class="tab-pane fade" id="metrics-tab">
+        <div class="retrain-panel mb-4">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h6 class="section-title mb-1">Modelni qayta o‘qitish va metrikalarni yangilash</h6>
+              <div class="text-sm text-muted">Eng yangi belgilangan dataset asosida Random Forest modeli, Accuracy, Precision, Recall, F1, ROC-AUC, Confusion Matrix va Feature Importance qayta hisoblanadi.</div>
+              <div class="text-xs text-muted mt-2">Oxirgi trening: {{ model_metrics.trained_at|default:"—" }} · Dataset: {{ model_metrics.dataset_size|default:0 }} · Davomiyligi: {{ model_metrics.training_duration_seconds|default:0|floatformat:2 }} soniya</div>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+              <form method="post" action="{% url 'geoai:retrain_model' %}" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerText='O‘qitilmoqda...';">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary mb-0">Modelni qayta o‘qitish</button>
+              </form>
+            </div>
+          </div>
+          {% if model_comparison.changes %}
+          <div class="table-responsive mt-3">
+            <table class="table table-sm mb-0"><thead><tr><th>Metrika</th><th>Oldingi</th><th>Yangi</th><th>Farq</th></tr></thead><tbody>
+              {% for key, item in model_comparison.changes.items %}<tr><td>{{ key }}</td><td>{{ item.old|floatformat:4 }}</td><td>{{ item.new|floatformat:4 }}</td><td class="{% if item.delta >= 0 %}comparison-up{% else %}comparison-down{% endif %}">{{ item.delta|floatformat:4 }}</td></tr>{% endfor %}
+            </tbody></table>
+          </div>
+          {% endif %}
+        </div>
+        <div class="row">
+          <div class="col-lg-7 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">ROC egri chiziqlari</h6><div class="chart-wrap"><canvas id="rocChart"></canvas></div></div></div>
+          <div class="col-lg-5 mb-4"><div class="border rounded-3 p-3 h-100"><h6 class="section-title mb-3">Umumiy ko‘rsatkichlar</h6>
+            <div class="row text-center">
+              <div class="col-6 mb-3"><div class="metric-label">Precision</div><div class="h4 text-dark">{{ model_metrics.precision_weighted|floatformat:3 }}</div></div>
+              <div class="col-6 mb-3"><div class="metric-label">Recall</div><div class="h4 text-dark">{{ model_metrics.recall_weighted|floatformat:3 }}</div></div>
+              <div class="col-6"><div class="metric-label">F1-score</div><div class="h4 text-dark">{{ model_metrics.f1_weighted|floatformat:3 }}</div></div>
+              <div class="col-6"><div class="metric-label">Test hajmi</div><div class="h4 text-dark">{{ model_metrics.test_size|default:0 }}</div></div>
+            </div>
+            <hr><div class="text-sm text-muted">Versiya: {{ model_metrics.algorithm_version|default:"—" }}</div>
+          </div></div>
+        </div>
+        <div class="row">
+          <div class="col-lg-6 mb-4"><div class="border rounded-3 p-3 h-100"><h6 class="section-title mb-3">Confusion Matrix</h6><div class="table-responsive"><table class="table matrix-table"><thead><tr><th>Haqiqiy \ Bashorat</th>{% for c in model_metrics.classes %}<th>{{ c }}</th>{% endfor %}</tr></thead><tbody>{% for row in model_metrics.confusion_rows %}<tr><th>{{ row.label }}</th>{% for v in row.values %}<td class="{% if forloop.parentloop.counter == forloop.counter %}diag{% endif %}">{{ v }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></div></div>
+          <div class="col-lg-6 mb-4"><div class="border rounded-3 p-3 h-100"><h6 class="section-title mb-3">Classification Report</h6><div class="table-responsive"><table class="table align-items-center"><thead><tr><th>Sinf</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th></tr></thead><tbody>{% for r in model_metrics.classification_rows %}<tr><td><b>{{ r.label }}</b></td><td>{{ r.precision|floatformat:3 }}</td><td>{{ r.recall|floatformat:3 }}</td><td>{{ r.f1|floatformat:3 }}</td><td>{{ r.support|floatformat:0 }}</td></tr>{% endfor %}</tbody></table></div></div></div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="features-tab">
+        <div class="row">
+          <div class="col-lg-5 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Qatlamlar bo‘yicha ahamiyat</h6><div class="chart-wrap"><canvas id="groupChart"></canvas></div></div></div>
+          <div class="col-lg-7 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">TOP-20 muhim belgilar</h6><div class="chart-wrap tall"><canvas id="featureChart"></canvas></div></div></div>
+        </div>
+        <div class="formula">Spatial Layer (latitude, longitude) + Temporal Layer (oy, hafta kuni, sana) + Semantic Layer (TF-IDF bigramlar) → Fusion Layer → Random Forest</div>
+      </div>
+
+      <div class="tab-pane fade" id="priority-tab">
+        <div class="formula mb-3">Pᵢ = 0.22ρ̃ᵢ + 0.18f̃ᵢ + 0.18qᵢ + 0.20W(Cᵢ) + 0.12Confᵢ + 0.10ñᵢ</div>
+        <div class="row mb-3">
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">O‘rtacha Pᵢ</div><div class="number">{{ avg_priority|floatformat:3 }}</div></div></div>
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">Maksimal Pᵢ</div><div class="number">{{ priority_stats.max_priority|floatformat:3 }}</div></div></div>
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">Minimal Pᵢ</div><div class="number">{{ priority_stats.min_priority|floatformat:3 }}</div></div></div>
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">O‘rtacha Confᵢ</div><div class="number">{{ avg_confidence|floatformat:3 }}</div></div></div>
+        </div>
+        <div class="d-flex justify-content-end mb-3">
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'geoai:priority_export_csv' %}?category={{ selected_category }}&priority={{ selected_priority }}">CSV eksport</a>
+        </div>
+        <div class="row">
+          <div class="col-lg-4 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Ustuvorlik darajalari</h6><div class="chart-wrap priority"><canvas id="priorityLevelChart"></canvas></div></div></div>
+          <div class="col-lg-4 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Pᵢ taqsimoti</h6><div class="chart-wrap priority"><canvas id="priorityHistogram"></canvas></div></div></div>
+          <div class="col-lg-4 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Komponentlarning o‘rtacha qiymati</h6><div class="chart-wrap priority"><canvas id="componentChart"></canvas></div></div></div>
+        </div>
+        <div class="row">
+          <div class="col-lg-6 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Kategoriya bo‘yicha o‘rtacha Pᵢ</h6><div class="chart-wrap tall"><canvas id="priorityCategoryChart"></canvas></div></div></div>
+          <div class="col-lg-6 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Vaqt bo‘yicha ustuvorlik dinamikasi</h6><div class="chart-wrap tall"><canvas id="priorityTimelineChart"></canvas></div></div></div>
+        </div>
+        <div class="scientific-note"><b>Ilmiy izoh:</b> ushbu panel 2-ilmiy yangilikni amalda ko‘rsatadi. Har bir murojaatning Pᵢ indeksi olti komponentning vaznlangan yig‘indisi asosida hisoblanadi va natijalar daraja, kategoriya hamda vaqt kesimida tahlil qilinadi.</div>
+      </div>
+
+      <div class="tab-pane fade" id="risk-tab">
+        <div class="formula mb-3">Pᵢ → DBSCAN(ε, MinPts) → Kₖ → WKDE → Hₖ = 0.28ρ̃ₖ + 0.27Pₖ* + 0.18S̃ₖ + 0.15G̃ₖ + 0.12Ãₖ → Riskₖ</div>
+        <div class="row mb-3">
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">Klasterlar soni</div><div class="number">{{ risk_stats.cluster_count }}</div></div></div>
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">Shovqin nuqtalar</div><div class="number">{{ risk_stats.noise_count }}</div></div></div>
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">Maksimal Hₖ</div><div class="number">{{ risk_stats.max_risk|floatformat:3 }}</div></div></div>
+          <div class="col-md-3 mb-3"><div class="priority-summary"><div class="metric-label">O‘rtacha Hₖ</div><div class="number">{{ risk_stats.avg_risk|floatformat:3 }}</div></div></div>
+        </div>
+        <div class="row">
+          <div class="col-lg-5 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Xavf darajalari</h6><div class="chart-wrap priority"><canvas id="riskLevelChart"></canvas></div></div></div>
+          <div class="col-lg-7 mb-4"><div class="border rounded-3 p-3"><h6 class="section-title mb-3">Klasterlar bo‘yicha integral xavf Hₖ</h6><div class="chart-wrap priority"><canvas id="clusterRiskChart"></canvas></div></div></div>
+        </div>
+        <div class="table-responsive border rounded-3">
+          <table class="table mb-0"><thead><tr><th>Klaster</th><th>Nuqtalar</th><th>O‘rtacha WKDE</th><th>O‘rtacha Pᵢ</th><th>Hₖ</th><th>Xavf</th></tr></thead><tbody>
+          {% for c in risk_stats.clusters %}<tr><td><b>K{{ c.label }}</b></td><td>{{ c.count }}</td><td>{{ c.avg_kde|floatformat:3 }}</td><td>{{ c.avg_priority|floatformat:3 }}</td><td><b>{{ c.risk_index|floatformat:3 }}</b></td><td><span class="badge-soft level-{{ c.risk_level }}">{{ c.risk_level }}</span></td></tr>{% empty %}<tr><td colspan="6" class="text-center py-4">Avval <code>python manage.py analyze_risk</code> buyrug‘ini bajaring.</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+        <div class="scientific-note mt-3"><b>Ilmiy izoh:</b> DBSCAN tabiiy fazoviy klasterlarni ajratadi, WKDE esa har bir murojaatni Pᵢ ustuvorlik indeksi bilan vaznlaydi. Har bir klaster uchun Hₖ integral xavf indeksi hisoblanib, yuqori, o‘rta va past xavf zonalari shakllantiriladi.</div>
+      </div>
+
+      <div class="tab-pane fade" id="smart-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="formula flex-grow-1 me-3">Riskₖ → GeoLayers → SpatialQuery → DynamicFilter → SmartMonitoring → DecisionSupport → ResourceAllocation → SMART-ONLINE</div>
+          <span class="smart-status">ONLINE MONITORING</span>
+        </div>
+        <div class="row mb-3">
+          <div class="col-xl-2 col-md-4 mb-3"><div class="smart-kpi"><div class="metric-label">So‘nggi 24 soat</div><div class="value">{{ smart_stats.last_24h }}</div><div class="metric-note">yangi murojaatlar</div></div></div>
+          <div class="col-xl-2 col-md-4 mb-3"><div class="smart-kpi"><div class="metric-label">Tezkor nazorat</div><div class="value">{{ smart_stats.urgent }}</div><div class="metric-note">yuqori Pᵢ yoki Hₖ</div></div></div>
+          <div class="col-xl-2 col-md-4 mb-3"><div class="smart-kpi"><div class="metric-label">Yechilmagan</div><div class="value">{{ smart_stats.unresolved }}</div><div class="metric-note">monitoringdagi murojaatlar</div></div></div>
+          <div class="col-xl-2 col-md-4 mb-3"><div class="smart-kpi"><div class="metric-label">Biriktirilgan</div><div class="value">{{ smart_stats.assigned }}</div><div class="metric-note">mas’ul tashkilotga</div></div></div>
+          <div class="col-xl-2 col-md-4 mb-3"><div class="smart-kpi"><div class="metric-label">Biriktirish darajasi</div><div class="value">{{ smart_stats.assignment_rate|floatformat:1 }}%</div><div class="metric-note">umumiy oqim</div></div></div>
+          <div class="col-xl-2 col-md-4 mb-3"><div class="smart-kpi"><div class="metric-label">Yuqori xavf zonalari</div><div class="value">{{ smart_stats.high_risk_clusters }}</div><div class="metric-note">tezkor qaror talab etadi</div></div></div>
+        </div>
+
+        <div class="smart-toolbar mb-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-lg-2 col-md-4"><label for="queryLat" class="form-label text-xs fw-bold">Markaz latitude</label><input id="queryLat" type="number" step="0.000001" class="form-control" placeholder="41.3111"></div>
+            <div class="col-lg-2 col-md-4"><label for="queryLng" class="form-label text-xs fw-bold">Markaz longitude</label><input id="queryLng" type="number" step="0.000001" class="form-control" placeholder="69.2797"></div>
+            <div class="col-lg-2 col-md-4"><label for="queryRadius" class="form-label text-xs fw-bold">Radius, km</label><input id="queryRadius" type="number" min="1" max="500" value="50" class="form-control"></div>
+            <div class="col-lg-2 col-md-4"><button id="applySpatialQuery" type="button" class="btn btn-primary w-100 mb-0">Radius qidiruvi</button></div>
+            <div class="col-lg-2 col-md-4"><button id="clearSpatialQuery" type="button" class="btn btn-outline-secondary w-100 mb-0">Tozalash</button></div>
+            <div class="col-lg-2 col-md-4"><a class="btn btn-outline-primary w-100 mb-0" href="{% url 'geoai:smart_export_csv' %}?category={{ selected_category }}&priority={{ selected_priority }}&risk={{ selected_risk }}&date_from={{ selected_date_from }}&date_to={{ selected_date_to }}">Tavsiyalar CSV</a></div>
+          </div>
+          <div class="text-xs text-muted mt-2">Xaritada istalgan nuqtani bosing — markaz avtomatik belgilanadi. Radius ichidagi murojaatlar va klasterlar ajratib ko‘rsatiladi.</div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-8 mb-4"><div id="smartMap"></div></div>
+          <div class="col-lg-4 mb-4">
+            <div class="border rounded-3 p-3 h-100">
+              <h6 class="section-title mb-3">Resurslarni tavsiya etilgan taqsimlash</h6>
+              <div class="chart-wrap priority"><canvas id="resourceChart"></canvas></div>
+              <div class="scientific-note mt-3"><b>Qaror qoidasi:</b> resurs ulushi klasterlarning integral xavf indekslariga mutanosib taqsimlanadi: Rₖ = Hₖ / ΣH · B.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border rounded-3 overflow-hidden">
+          <div class="p-3 bg-light d-flex justify-content-between align-items-center"><h6 class="section-title">Avtomatik boshqaruv tavsiyalari</h6><span id="spatialResultCount" class="badge bg-gradient-primary">Barcha natijalar</span></div>
+          <div class="table-responsive"><table class="table align-items-center mb-0"><thead><tr><th>№</th><th>Klaster</th><th>Hₖ</th><th>Xavf</th><th>Murojaatlar</th><th>Ustun kategoriya</th><th>Mas’ul tashkilot</th><th>Tavsiya / muddat</th><th>Resurs</th></tr></thead><tbody>
+            {% for r in smart_stats.top_recommendations %}<tr class="decision-{{ r.risk_level }} smart-decision-row" data-cluster="{{ r.cluster }}"><td>{{ r.rank }}</td><td><b>{{ r.cluster }}</b></td><td><b>{{ r.risk_index|floatformat:3 }}</b></td><td><span class="badge-soft level-{{ r.risk_level }}">{{ r.risk_level }}</span></td><td>{{ r.complaint_count }}</td><td>{{ r.dominant_category }}</td><td>{{ r.responsible_organization }}</td><td><div class="text-sm">{{ r.action }}</div><div class="text-xs text-muted">{{ r.response_hours }} soat ichida</div></td><td><b>{% widthratio r.resource_share 1 100 %}%</b></td></tr>{% empty %}<tr><td colspan="9" class="text-center py-4">Risk tahlili natijalari mavjud emas.</td></tr>{% endfor %}
+          </tbody></table></div>
+        </div>
+        <div class="scientific-note mt-3"><b>4-ilmiy yangilik:</b> GeoAI natijalari ko‘p qatlamli Web-GIS, fazoviy qidiruv, dinamik filtrlash, real vaqt monitoringi va avtomatik tavsiyalar bilan yagona SMART-ONLINE boshqaruv muhitiga integratsiyalandi.</div>
+      </div>
+
+      <div class="tab-pane fade" id="reports-tab">
+        <div class="formula mb-4">Hisobotlar → Model natijalari PDF + Tizim natijalari PDF → Ilmiy va amaliy hujjatlashtirish</div>
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="report-card">
+              <div class="d-flex align-items-start gap-3">
+                <div class="report-icon">M</div>
+                <div>
+                  <h5 class="text-dark mb-2">1. Model natijalari</h5>
+                  <p class="text-sm text-muted">Model versiyasi, trening sanasi, dataset hajmi, Accuracy, Precision, Recall, F1, ROC-AUC, Confusion Matrix, Classification Report, qatlamlar ahamiyati, TOP-20 belgilar va oldingi-yangi model taqqoslanishi.</p>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-6"><div class="priority-summary"><div class="metric-label">Accuracy</div><div class="number">{{ model_metrics.accuracy|default:0|floatformat:3 }}</div></div></div>
+                <div class="col-6"><div class="priority-summary"><div class="metric-label">ROC-AUC</div><div class="number">{{ model_metrics.roc_auc_macro_ovr|default:0|floatformat:3 }}</div></div></div>
+              </div>
+              <a class="btn btn-primary w-100 mt-4 mb-0" href="{% url 'geoai:model_results_pdf' %}">Model natijalarini PDF yuklab olish</a>
+            </div>
+          </div>
+          <div class="col-lg-6 mb-4">
+            <div class="report-card">
+              <div class="d-flex align-items-start gap-3">
+                <div class="report-icon">T</div>
+                <div>
+                  <h5 class="text-dark mb-2">2. Tizim natijalari</h5>
+                  <p class="text-sm text-muted">Murojaatlar, GeoPriority, TOP murojaatlar, DBSCAN klasterlari, WKDE, integral xavf Hₖ, SMART-ONLINE monitoringi, resurs taqsimoti va avtomatik boshqaruv tavsiyalari.</p>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-6"><div class="priority-summary"><div class="metric-label">Murojaatlar</div><div class="number">{{ total }}</div></div></div>
+                <div class="col-6"><div class="priority-summary"><div class="metric-label">Klasterlar</div><div class="number">{{ risk_stats.cluster_count }}</div></div></div>
+              </div>
+              <a class="btn btn-primary w-100 mt-4 mb-0" href="{% url 'geoai:system_results_pdf' %}?category={{ selected_category }}&priority={{ selected_priority }}&risk={{ selected_risk }}&date_from={{ selected_date_from }}&date_to={{ selected_date_to }}">Tizim natijalarini PDF yuklab olish</a>
+            </div>
+          </div>
+        </div>
+        <div class="scientific-note"><b>Izoh:</b> tizim hisoboti joriy filtrlarni hisobga oladi. Model hisoboti esa oxirgi trening natijalari va model versiyasi bo‘yicha shakllantiriladi.</div>
+      </div>
+
+    </div>
+    </div>
+  </div>
+</div>
+
+<div class="card science-card">
+  <div class="card-header pb-0"><div class="d-flex justify-content-between"><h6 class="section-title">TOP-20 ustuvor murojaatlar</h6><span class="text-xs text-muted">Har bir Pᵢ komponenti bilan</span></div></div>
+  <div class="table-responsive"><table class="table align-items-center mb-0"><thead><tr><th>Murojaat</th><th>Kategoriya</th><th>Confᵢ</th><th>ρᵢ</th><th>fᵢ</th><th>qᵢ</th><th>W(Cᵢ)</th><th>nᵢ</th><th>Pᵢ</th><th>Daraja</th></tr></thead><tbody>{% for a in top_reports %}<tr><td class="text-sm">{{ a.report.description|truncatechars:42 }}</td><td>{{ a.predicted_category }}</td><td>{{ a.classifier_confidence|floatformat:3 }}</td><td>{{ a.spatial_density|floatformat:3 }}</td><td>{{ a.recurrence_frequency|floatformat:3 }}</td><td>{{ a.temporal_relevance|floatformat:3 }}</td><td>{{ a.severity_weight|floatformat:2 }}</td><td>{{ a.neighbor_influence|floatformat:3 }}</td><td><b>{{ a.priority_index|floatformat:3 }}</b></td><td><span class="badge-soft level-{{ a.priority_level }}">{{ a.get_priority_level_display }}</span></td></tr>{% empty %}<tr><td colspan="10" class="text-center py-4">Avval <code>python manage.py analyze_geoai</code> buyrug‘ini bajaring.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+
+{{ points|json_script:"geoai-points" }}
+{{ model_metrics|json_script:"geoai-metrics" }}
+{{ priority_stats|json_script:"priority-stats" }}
+{{ risk_stats|json_script:"risk-stats" }}
+{{ smart_stats|json_script:"smart-stats" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/plugins/chartjs.min.js' %}"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="{% static 'js/geoai/analytics.js' %}" defer></script>
+{% endblock %}

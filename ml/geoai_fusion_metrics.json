@@ -1,0 +1,257 @@
+{
+  "algorithm_version": "geoai-fusion-2.1-20260715231920",
+  "trained_at": "2026-07-15T23:19:20",
+  "training_duration_seconds": 1.0806540389999668,
+  "dataset_size": 50,
+  "train_size": 35,
+  "test_size": 15,
+  "classes": [
+    "ecology",
+    "road",
+    "traffic",
+    "waste"
+  ],
+  "accuracy": 1.0,
+  "precision_weighted": 1.0,
+  "recall_weighted": 1.0,
+  "f1_weighted": 1.0,
+  "roc_auc_macro_ovr": 1.0,
+  "confusion_matrix": [
+    [
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      5,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      4,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      4
+    ]
+  ],
+  "classification_report": {
+    "ecology": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 2.0
+    },
+    "road": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "traffic": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 4.0
+    },
+    "waste": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 4.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 15.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 15.0
+    }
+  },
+  "roc_series": [
+    {
+      "label": "ecology",
+      "auc": 1.0,
+      "fpr": [
+        0.0,
+        0.0,
+        0.0,
+        0.38461538461538464,
+        0.5384615384615384,
+        0.8461538461538461,
+        1.0
+      ],
+      "tpr": [
+        0.0,
+        0.5,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "label": "road",
+      "auc": 1.0,
+      "fpr": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "tpr": [
+        0.0,
+        0.2,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "label": "traffic",
+      "auc": 1.0,
+      "fpr": [
+        0.0,
+        0.0,
+        0.0,
+        0.36363636363636365,
+        0.5454545454545454,
+        1.0
+      ],
+      "tpr": [
+        0.0,
+        0.25,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "label": "waste",
+      "auc": 1.0,
+      "fpr": [
+        0.0,
+        0.0,
+        0.0,
+        0.45454545454545453,
+        0.6363636363636364,
+        1.0
+      ],
+      "tpr": [
+        0.0,
+        0.25,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "per_class_auc": {
+    "ecology": 1.0,
+    "road": 1.0,
+    "traffic": 1.0,
+    "waste": 1.0
+  },
+  "top_features": [
+    {
+      "feature": "longitude",
+      "importance": 0.1502142793853109
+    },
+    {
+      "feature": "latitude",
+      "importance": 0.13265548347127093
+    },
+    {
+      "feature": "yo",
+      "importance": 0.09041494221444464
+    },
+    {
+      "feature": "axlat",
+      "importance": 0.06054225387292027
+    },
+    {
+      "feature": "svetofor",
+      "importance": 0.04289707708505234
+    },
+    {
+      "feature": "day_norm",
+      "importance": 0.0335704226670983
+    },
+    {
+      "feature": "transport",
+      "importance": 0.0270423931333865
+    },
+    {
+      "feature": "weekday_cos",
+      "importance": 0.024692856871882204
+    },
+    {
+      "feature": "yashil hudud",
+      "importance": 0.024349699632480744
+    },
+    {
+      "feature": "yashil",
+      "importance": 0.022937917071867524
+    },
+    {
+      "feature": "hudud",
+      "importance": 0.022048480702455867
+    },
+    {
+      "feature": "weekday_sin",
+      "importance": 0.018292934784638303
+    },
+    {
+      "feature": "daraxtlar",
+      "importance": 0.015925013960749797
+    },
+    {
+      "feature": "olib ketilmagan",
+      "importance": 0.00937012718063082
+    },
+    {
+      "feature": "daraxtlar kesilmoqda",
+      "importance": 0.009269744897704778
+    },
+    {
+      "feature": "ketilmagan",
+      "importance": 0.009035566318589533
+    },
+    {
+      "feature": "kesilmoqda",
+      "importance": 0.008570003012253023
+    },
+    {
+      "feature": "qurib",
+      "importance": 0.008540052240057473
+    },
+    {
+      "feature": "svetofor ishlamayapti",
+      "importance": 0.008329870890640039
+    },
+    {
+      "feature": "ketgan",
+      "importance": 0.008006562672308476
+    }
+  ],
+  "group_importance": {
+    "semantic": 0.6405740228197994,
+    "spatial": 0.28286976285658183,
+    "temporal": 0.07655621432361881
+  }
+}

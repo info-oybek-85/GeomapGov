@@ -1,0 +1,282 @@
+from django.db import models
+from django.conf import settings
+from utils.models import BaseModel
+from .choices import AttachmentType
+
+
+# =========================
+# Report Status
+# =========================
+class ReportStatus(models.TextChoices):
+    NEW = "new", "New"
+    SENT = "sent", "Sent to organization"
+    READ = "read", "Read by organization"
+    ACCEPTED = "accepted", "Accepted by organization"
+    ASSIGNED = "assigned", "Assigned to staff"
+    IN_PROGRESS = "in_progress", "In progress"
+    PENDING_CONFIRMATION = "pending_confirmation", "Pending citizen confirmation"
+    RESOLVED = "resolved", "Resolved"
+    REOPENED = "reopened", "Reopened"
+    REJECTED = "rejected", "Rejected"
+    REDIRECTED = "redirected", "Redirected"
+
+
+# =========================
+# Upload path
+# =========================
+def report_upload_path(instance, filename: str) -> str:
+    return f"reports/{instance.report_id}/{filename}"
+
+
+# =========================
+# Main Report
+# =========================
+class Report(BaseModel):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reports"
+    )
+
+    title = models.CharField(max_length=255)
+
+    description = models.TextField()
+
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True
+    )
+
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True
+    )
+
+    category_ai = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name="AI aniqlagan kategoriya"
+    )
+
+    status = models.CharField(
+        max_length=24,
+        choices=ReportStatus.choices,
+        default=ReportStatus.NEW
+    )
+
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reports"
+    )
+
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    work_started_at = models.DateTimeField(null=True, blank=True)
+    work_completed_at = models.DateTimeField(null=True, blank=True)
+    citizen_confirmed_at = models.DateTimeField(null=True, blank=True)
+    deadline_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    completion_note = models.TextField(blank=True, default="")
+    citizen_confirmation_note = models.TextField(blank=True, default="")
+
+    def __str__(self):
+        return f"Report #{self.id} ({self.status})"
+
+    def get_status_uz(self) -> str:
+        mapping = {
+            ReportStatus.NEW: "Yangi",
+            ReportStatus.SENT: "Tashkilotga yuborildi",
+            ReportStatus.READ: "Tashkilot tomonidan o‘qildi",
+            ReportStatus.ACCEPTED: "Tashkilot qabul qildi",
+            ReportStatus.ASSIGNED: "Xodimga biriktirildi",
+            ReportStatus.IN_PROGRESS: "Jarayonda",
+            ReportStatus.PENDING_CONFIRMATION: "Fuqaro tasdig‘i kutilmoqda",
+            ReportStatus.RESOLVED: "Hal qilindi",
+            ReportStatus.REOPENED: "Qayta ishga yuborildi",
+            ReportStatus.REJECTED: "Rad etildi",
+            ReportStatus.REDIRECTED: "Yo‘naltirildi",
+        }
+        return mapping.get(self.status, str(self.status))
+
+# =========================
+# Attachments
+# =========================
+class ReportAttachment(BaseModel):
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.CASCADE,
+        related_name="attachments"
+    )
+
+    type = models.CharField(max_length=16, choices=AttachmentType.choices)
+    file = models.FileField(upload_to=report_upload_path)
+
+    original_name = models.CharField(max_length=255, blank=True, default="")
+    mime_type = models.CharField(max_length=100, blank=True, default="")
+    file_size = models.BigIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.report_id} - {self.type}"
+
+
+# =========================
+# Organization reportni o‘qidi
+# =========================
+class ReportRead(models.Model):
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.CASCADE,
+        related_name="reads"
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE
+    )
+    read_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    read_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("report", "organization")
+
+
+# =========================
+# Organization qabul qildi
+# =========================
+class ReportAcceptance(models.Model):
+    report = models.OneToOneField(
+        Report,
+        on_delete=models.CASCADE,
+        related_name="acceptance"
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE
+    )
+    accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    accepted_at = models.DateTimeField(auto_now_add=True)
+
+
+# =========================
+# Organization ichida yuklash
+# =========================
+class ReportAssignment(models.Model):
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.CASCADE,
+        related_name="assignments"
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE
+    )
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="assigned_reports"
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="assigned_by_me"
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    deadline_at = models.DateTimeField(null=True, blank=True)
+    completion_note = models.TextField(blank=True, default="")
+
+
+
+def execution_evidence_upload_path(instance, filename: str) -> str:
+    return f"reports/{instance.report_id}/execution/{filename}"
+
+
+class ReportWorkEvidence(models.Model):
+    report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name="work_evidence")
+    assignment = models.ForeignKey(
+        ReportAssignment, on_delete=models.SET_NULL, null=True, blank=True, related_name="evidence"
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    file = models.FileField(upload_to=execution_evidence_upload_path)
+    original_name = models.CharField(max_length=255, blank=True, default="")
+    mime_type = models.CharField(max_length=100, blank=True, default="")
+    file_size = models.BigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Work evidence: {self.report_id}"
+
+# =========================
+# Boshqa organization ga yo‘naltirish
+# =========================
+class ReportRedirect(models.Model):
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.CASCADE,
+        related_name="redirects"
+    )
+    from_organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="redirected_from"
+    )
+    to_organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE,
+        related_name="redirected_to"
+    )
+    reason = models.TextField()
+
+    redirected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    redirected_at = models.DateTimeField(auto_now_add=True)
+
+class ReportRejection(models.Model):
+    report = models.OneToOneField(
+        "reports.Report",
+        on_delete=models.CASCADE,
+        related_name="rejection"
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.CASCADE
+    )
+    reason = models.TextField()
+
+    rejected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    rejected_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Rejected: {self.report_id}"
+    
+# category_ai = models.CharField(max_length=50, null=True, blank=True)

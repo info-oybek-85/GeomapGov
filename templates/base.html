@@ -1,0 +1,493 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="76x76"
+      href="{% static 'img/apple-icon.png' %}"
+    />
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
+
+    <title>{% block title %}GeomapGov Admin{% endblock %}</title>
+
+    <!-- Fonts and icons -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700"
+      rel="stylesheet"
+    />
+    <link
+      href="https://demos.creative-tim.com/argon-dashboard-pro/css/nucleo-icons.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://demos.creative-tim.com/argon-dashboard-pro/css/nucleo-svg.css"
+      rel="stylesheet"
+    />
+    <script
+      src="https://kit.fontawesome.com/42d5adcbca.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- CSS Files -->
+    <link
+      id="pagestyle"
+      href="{% static 'css/argon-dashboard.css' %}?v=2.1.0"
+      rel="stylesheet"
+    />
+
+    {% block extra_head %}{% endblock %} {% block extra_css %}
+    <style>
+      #map {
+        height: 420px;
+        width: 100%;
+        border-radius: 12px;
+      }
+
+      .leaflet-popup-content {
+        margin: 10px 12px;
+      }
+      .leaflet-container a.leaflet-popup-close-button {
+        top: 8px;
+        right: 8px;
+      }
+    </style>
+    {% endblock %}
+  </head>
+
+  <body class="g-sidenav-show bg-gray-100">
+    <div class="min-height-300 bg-dark position-absolute w-100"></div>
+
+    <!-- SIDEBAR -->
+    {% block sidebar %}
+    <aside
+      class="sidenav bg-white navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-4"
+      id="sidenav-main"
+    >
+      <div class="sidenav-header">
+        <i
+          class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none"
+          aria-hidden="true"
+          id="iconSidenav"
+        ></i>
+
+        {% if request.user.is_authenticated and request.user.organization_memberships.first.role == "staff" %}
+        <div class="navbar-brand m-0" aria-label="Xodim kabineti">
+          <img
+            src="{% static 'img/logo-ct-dark.png' %}"
+            width="26"
+            height="26"
+            class="navbar-brand-img h-100"
+            alt="logo"
+          />
+          <span class="ms-1 font-weight-bold">Xodim kabineti</span>
+        </div>
+        {% else %}
+        <a class="navbar-brand m-0" href="{% url 'dashboard:home' %}">
+          <img
+            src="{% static 'img/logo-ct-dark.png' %}"
+            width="26"
+            height="26"
+            class="navbar-brand-img h-100"
+            alt="logo"
+          />
+          <span class="ms-1 font-weight-bold">GeomapGov</span>
+        </a>
+        {% endif %}
+      </div>
+
+      <hr class="horizontal dark mt-0" />
+
+      <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main">
+        <ul class="navbar-nav">
+  {# ✅ SUPERUSER => to'liq admin menu #}
+  {% if request.user.is_authenticated and request.user.is_superuser %}
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+         href="{% url 'dashboard:home' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-tv-2 text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">Asosiy sahifa</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'complaints' or request.resolver_match.url_name == 'report_detail' %}active{% endif %}"
+         href="{% url 'dashboard:complaints' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-calendar-grid-58 text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">Shikoyatlar</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'organizations' or request.resolver_match.url_name == 'organization_detail' %}active{% endif %}"
+         href="{% url 'dashboard:organizations' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-building text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">Tashkilotlar</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.namespace == 'geoai' %}active{% endif %}" href="{% url 'geoai:analytics' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-chart-bar-32 text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">GeoAI Analytics</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'users' or request.resolver_match.url_name == 'user_detail' %}active{% endif %}"
+         href="{% url 'dashboard:users' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-single-02 text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">Foydalanuvchilar</span>
+      </a>
+    </li>
+
+  {% elif request.user.is_authenticated and request.user.organization_memberships.first.role == "staff" %}
+    {# Tashkilot xodimi user_type noto‘g‘ri DISPATCHER bo‘lib qolgan taqdirda ham staff menyusi ko‘rsatiladi. #}
+    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'worker_tasks' %}active{% endif %}" href="{% url 'dashboard:worker_tasks' %}"><div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center"><i class="ni ni-tv-2 text-dark text-sm opacity-10"></i></div><span class="nav-link-text ms-1">Asosiy sahifa</span></a></li>
+    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'worker_resolved' %}active{% endif %}" href="{% url 'dashboard:worker_resolved' %}"><div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center"><i class="ni ni-check-bold text-dark text-sm opacity-10"></i></div><span class="nav-link-text ms-1">Hal qilingan murojaatlar</span></a></li>
+
+  {% elif request.user.is_authenticated and request.user.user_type == "EXECUTOR" %}
+    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'worker_tasks' %}active{% endif %}" href="{% url 'dashboard:worker_tasks' %}"><div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center"><i class="ni ni-tv-2 text-dark text-sm opacity-10"></i></div><span class="nav-link-text ms-1">Asosiy sahifa</span></a></li>
+    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'worker_resolved' %}active{% endif %}" href="{% url 'dashboard:worker_resolved' %}"><div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center"><i class="ni ni-check-bold text-dark text-sm opacity-10"></i></div><span class="nav-link-text ms-1">Hal qilingan murojaatlar</span></a></li>
+
+  {% elif request.user.is_authenticated and request.user.user_type == "DISPATCHER" %}
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'org-dashboard' %}active{% endif %}"
+         href="{% url 'dashboard:org-dashboard' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-tv-2 text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">Asosiy sahifa</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'org_reports' or request.resolver_match.url_name == 'org_report_detail' %}active{% endif %}"
+         href="{% url 'dashboard:org_reports' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-calendar-grid-58 text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">Shikoyatlar</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'org_users' %}active{% endif %}"
+         href="{% url 'dashboard:org_users' %}">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+          <i class="ni ni-single-02 text-dark text-sm opacity-10"></i>
+        </div>
+        <span class="nav-link-text ms-1">Xodimlar</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'dashboard:org-dashboard' %}#monitoring">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center"><i class="ni ni-time-alarm text-dark text-sm opacity-10"></i></div>
+        <span class="nav-link-text ms-1">Monitoring</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'dashboard:org-dashboard' %}#ai-tavsiyalar">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center"><i class="ni ni-bulb-61 text-dark text-sm opacity-10"></i></div>
+        <span class="nav-link-text ms-1">AI tavsiyalar</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'dashboard:org-dashboard' %}#hisobotlar">
+        <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center"><i class="ni ni-chart-pie-35 text-dark text-sm opacity-10"></i></div>
+        <span class="nav-link-text ms-1">Hisobotlar</span>
+      </a>
+    </li>
+
+  {% endif %}
+</ul>
+
+      </div>
+    </aside>
+    {% endblock %}
+    <!-- END SIDEBAR -->
+
+    <main class="main-content position-relative border-radius-lg">
+      <!-- NAVBAR -->
+      <nav
+        class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl"
+        id="navbarBlur"
+        data-scroll="false"
+      >
+        <div class="container-fluid py-1 px-3">
+          <nav aria-label="breadcrumb">
+            <ol
+              class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5"
+            >
+              <li class="breadcrumb-item text-sm">
+                <a class="opacity-5 text-white" href="javascript:;"
+                  >Sahifalar</a
+                >
+              </li>
+              <li
+                class="breadcrumb-item text-sm text-white active"
+                aria-current="page"
+              >
+                {% block breadcrumb %}Boshqaruv paneli{% endblock %}
+              </li>
+            </ol>
+          </nav>
+
+          <div
+            class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4"
+            id="navbar"
+          >
+            <div class="ms-md-auto pe-md-3 d-flex align-items-center"></div>
+
+            <ul class="navbar-nav justify-content-end">
+              {% if request.user.is_authenticated %}
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  position: relative;
+                "
+              >
+                <!-- Username (bosilganda dropdown ochiladi) -->
+                <button
+                  type="button"
+                  onclick="toggleUserMenu()"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    background: transparent;
+                    border: 0;
+                    padding: 6px 10px;
+                    color: #fff;
+                    font-weight: 700;
+                    cursor: pointer;
+                    border-radius: 10px;
+                  "
+                  onmouseover="this.style.background='rgba(255,255,255,.10)'"
+                  onmouseout="this.style.background='transparent'"
+                >
+                  <!-- Avatar (initial) -->
+                  <span
+                    style="
+                      width: 28px;
+                      height: 28px;
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      border-radius: 999px;
+                      background: rgba(255, 255, 255, 0.18);
+                      border: 1px solid rgba(255, 255, 255, 0.22);
+                      font-size: 12px;
+                      font-weight: 800;
+                      letter-spacing: 0.02em;
+                    "
+                  >
+                    {{ request.user.username|slice:":1"|upper }}
+                  </span>
+
+                  <!-- Name -->
+                  <span style="display: inline-block; line-height: 1">
+                    {{ request.user.username }}
+                  </span>
+
+                  <!-- Caret (SVG) -->
+                  <span style="display: inline-flex; opacity: 0.9">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="white"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </button>
+
+                <!-- Dropdown -->
+                <div
+                  id="userMenuDropdown"
+                  style="
+                    position: absolute;
+                    right: 0;
+                    top: 42px;
+                    min-width: 210px;
+                    background: #fff;
+                    border-radius: 14px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+                    border: 1px solid rgba(0, 0, 0, 0.06);
+                    padding: 8px;
+                    display: none;
+                    z-index: 9999;
+                  "
+                >
+                  <div style="padding: 10px 10px 8px 10px">
+                    <div
+                      style="
+                        font-size: 11px;
+                        color: #8898aa;
+                        text-transform: uppercase;
+                        letter-spacing: 0.08em;
+                      "
+                    >
+                      Foydalanuvchi
+                    </div>
+                    <div
+                      style="
+                        margin-top: 4px;
+                        font-weight: 800;
+                        color: #172b4d;
+                        font-size: 13px;
+                      "
+                    >
+                      {{request.user.get_full_name|default:request.user.username}}
+                    </div>
+                  </div>
+
+                  <div
+                    style="
+                      height: 1px;
+                      background: rgba(0, 0, 0, 0.06);
+                      margin: 6px 0;
+                    "
+                  ></div>
+
+                  <!-- Logout (POST + CSRF) -->
+                  <form
+                    method="post"
+                    action="{% url 'dashboard:logout' %}"
+                    style="margin: 0"
+                  >
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      style="
+                        width: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        background: #fff;
+                        border: 0;
+                        padding: 10px 10px;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        color: #f5365c;
+                        font-weight: 800;
+                        font-size: 13px;
+                      "
+                      onmouseover="this.style.background='#f7fafc'"
+                      onmouseout="this.style.background='#fff'"
+                    >
+                      <span
+                        style="display: flex; align-items: center; gap: 8px"
+                      >
+                        <span style="font-size: 16px; line-height: 1"></span>
+                        Chiqish
+                      </span>
+
+                      <span style="opacity: 0.6">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M10 17l5-5-5-5"
+                            stroke="#f5365c"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <script>
+                function toggleUserMenu() {
+                  const el = document.getElementById('userMenuDropdown')
+                  if (!el) return
+                  el.style.display =
+                    el.style.display === 'none' || !el.style.display
+                      ? 'block'
+                      : 'none'
+                }
+
+                // tashqariga bosilsa yopilsin
+                document.addEventListener('click', function (e) {
+                  const dd = document.getElementById('userMenuDropdown')
+                  if (!dd) return
+
+                  const btn = e.target.closest(
+                    "button[onclick='toggleUserMenu()']"
+                  )
+                  const inside = e.target.closest('#userMenuDropdown')
+                  if (!btn && !inside) dd.style.display = 'none'
+                })
+              </script>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <!-- END NAVBAR -->
+
+      <!-- PAGE CONTENT -->
+      <div class="container-fluid py-4">{% block content %}{% endblock %}</div>
+      <!-- END PAGE CONTENT -->
+    </main>
+
+    <!-- Core JS Files -->
+    <script src="{% static 'js/core/popper.min.js' %}"></script>
+    <script src="{% static 'js/core/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/plugins/perfect-scrollbar.min.js' %}"></script>
+    <script src="{% static 'js/plugins/smooth-scrollbar.min.js' %}"></script>
+
+    <script>
+      var win = navigator.platform.indexOf('Win') > -1
+      if (win && document.querySelector('#sidenav-scrollbar')) {
+        var options = { damping: '0.5' }
+        Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options)
+      }
+    </script>
+
+    <script src="{% static 'js/argon-dashboard.min.js' %}?v=2.1.0"></script>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>
