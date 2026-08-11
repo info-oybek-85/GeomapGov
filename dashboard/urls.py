@@ -30,6 +30,9 @@ urlpatterns = [
     # SmartGeoAI asosiy Public Portal
     path("", portal_views.public_portal, name="home"),
     
+    # Login qilingan foydalanuvchini ichki tizimga yo'naltirish
+    path("app/", entry_views.smart_home, name="app_home"),
+    
     # Existing admin dashboard kept under a stable internal URL.
     path("dashboard/", views.superadmin_dashboard, name="admin_home"),
 

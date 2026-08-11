@@ -153,7 +153,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 LOGIN_URL = "/login/"
-LOGIN_REDIRECT_URL = "/"
+# LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/app/"
 LOGOUT_REDIRECT_URL = "/login/"
 
 
@@ -224,14 +225,37 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 kun
 # Production Security
 # =========================
 
-SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_REFERRER_POLICY = "same-origin"
 
-# HSTS — hozircha sinov muddati
-SECURE_HSTS_SECONDS = 3600
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = False
+if DEBUG:
+    # Lokal development: http://127.0.0.1:8000
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
+
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+
+else:
+    # Production: https://fastappeal.uz
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+
+    # HSTS — hozircha sinov muddati
+    SECURE_HSTS_SECONDS = 3600
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = False
 
 SMARTGEOAI_TELEGRAM_BOT_URL = "https://t.me/AholiMurojatlariGeoxaritasi_bot"

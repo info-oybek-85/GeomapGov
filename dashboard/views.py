@@ -40,8 +40,7 @@ def custom_404_view(request, exception=None):
 @require_http_methods(["GET", "POST"])
 def sign_in(request):
     if request.user.is_authenticated:
-        # login bo'lib bo'lgan bo'lsa, dashboardga yuboramiz
-        return redirect("dashboard:home")
+        return redirect("dashboard:app_home")
 
     form = LoginForm(request.POST or None, request=request)
 
@@ -49,23 +48,32 @@ def sign_in(request):
         user = form.get_user()
         login(request, user)
 
-        # remember_me: yoqilmagan bo'lsa browser yopilganda session tugaydi
+        # remember_me yoqilmagan bo'lsa,
+        # browser yopilganda session tugaydi
         remember = form.cleaned_data.get("remember_me")
         if not remember:
             request.session.set_expiry(0)
 
+        # Agar next URL berilgan bo'lsa
         next_url = request.GET.get("next")
         if next_url:
             return redirect(next_url)
 
+        # Xodim
         membership = OrganizationMember.objects.filter(user=user).first()
+
         if membership and membership.role == OrganizationMember.ROLE_STAFF:
             return redirect("dashboard:worker_tasks")
+
         if getattr(user, "user_type", None) == UserChoices.EXECUTOR:
             return redirect("dashboard:worker_tasks")
+
+        # Dispatcher
         if getattr(user, "user_type", None) == UserChoices.DISPATCHER:
             return redirect("dashboard:org-dashboard")
-        return redirect("dashboard:home")
+
+        # Superadmin va qolgan rollar
+        return redirect("dashboard:app_home")
 
     return render(request, "auth/sign-in.html", {"form": form})
 
