@@ -39,3 +39,5 @@ staticfiles/
 
 # Docker
 *.pid
+GeomapGov/
+releases/

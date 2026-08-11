@@ -1,8 +1,0 @@
-{
-  "records_total": 5,
-  "records_with_reference_label": 5,
-  "top1_accuracy": 1.0,
-  "top3_accuracy": 1.0,
-  "mrr": 1.0,
-  "note": "GSOR v1 lexical-semantic baseline; Geo va Historical scorerlar keyingi bosqichda ulanadi."
-}

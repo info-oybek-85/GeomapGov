@@ -1,6 +1,0 @@
-﻿record_id,text,primary_problem,secondary_problems,primary_organization,supporting_organizations,priority,latitude,longitude,district,source_type,expert_verified,split,notes
-00194ca9-f05e-4ef8-b058-6bc0336c6d9c,Chiqindilar o’z vaqtida olib ketmayapti,ECO_WASTE,,Adliya vazirligi,,O‘rta,41.566142,69.787903,,real,Yo‘q,train,label_source=report_organization; detected=ECO_WASTE
-60fb48ce-1c89-4cc1-8c38-a652e2af0c77,Kanalizatsiyada chiqindilar kopayib ketyapti,ECO_WASTE,,Bilmayman,,O‘rta,41.236911,69.247002,,real,Yo‘q,train,label_source=report_organization; detected=ECO_WASTE
-7ea281c2-e43e-45ed-8e9f-f36f22d3f56a,Odamlar suvni axlat qilyapti,ECO_WASTE,,Bilmayman,,O‘rta,41.257903,69.438240,,real,Yo‘q,train,label_source=report_organization; detected=ECO_WASTE
-8dfed371-5274-4dab-8426-a7f6d4660f8f,Chiqindilar yigilib ketyapti,ECO_WASTE,,Bilmayman,,O‘rta,40.466720,71.712280,,real,Yo‘q,train,label_source=report_organization; detected=ECO_WASTE
-a935beaa-f79b-4151-9c2b-ca8663565ddf,Gullarni yemirib axlatga tashlayapti,ECO_WASTE,,Bilmayman,,O‘rta,41.629643,69.952963,,real,Yo‘q,train,label_source=report_organization; detected=ECO_WASTE
