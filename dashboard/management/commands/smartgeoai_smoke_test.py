@@ -41,7 +41,8 @@ class Command(BaseCommand):
             # Django test Client default host = "testserver".
             # Project ALLOWED_HOSTS intentionally doesn't include it.
             # Use an already allowed local host instead.
-            return Client(HTTP_HOST="127.0.0.1")
+            # return Client(HTTP_HOST="127.0.0.1")
+            return Client( HTTP_HOST="127.0.0.1", HTTP_X_FORWARDED_PROTO="https",)
 
         def test_get(client, group, name, url_name, expected=(200, 302, 301, 403)):
             try:
