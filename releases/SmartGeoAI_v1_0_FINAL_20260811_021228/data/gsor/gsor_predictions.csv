@@ -1,0 +1,6 @@
+﻿record_id,text,true_primary_organization,alternative_organizations,top1,top1_score,top2,top2_score,top3,top3_score,matched_terms,decision,rank_of_truth
+GSOR-001,Mahallamizda ikki kundan beri svet yo'q.,Hududiy elektr tarmoqlari,,Hududiy elektr tarmoqlari,0.221424,Ekologiya va obodonlashtirish,0.0045,Yo'l boshqarmasi,0.0045,svet,citizen_clarification,1
+GSOR-002,Daraxt elektr simiga qulab tushdi va yo'lni yopdi.,Hududiy elektr tarmoqlari,Ekologiya va obodonlashtirish; Yo'l boshqarmasi,Hududiy elektr tarmoqlari,0.356657,Ekologiya va obodonlashtirish,0.231232,Yo'l boshqarmasi,0.221424,elektr; sim,citizen_clarification,1
+GSOR-003,Kanalizatsiya toshib yo'lni suv bosdi.,Suv ta'minoti,Yo'l boshqarmasi,Suv ta'minoti,0.376113,Yo'l boshqarmasi,0.221424,Hududiy elektr tarmoqlari,0.0,suv; kanalizatsiya,citizen_clarification,1
+GSOR-004,Svetofor 5 kundan beri ishlamayapti.,Transport / Yo'l harakati xavfsizligi,,Transport / Yo'l harakati xavfsizligi,0.240747,Hududiy elektr tarmoqlari,0.221424,Ekologiya va obodonlashtirish,0.0,svetofor,citizen_clarification,1
+GSOR-005,"Chiqindi olib ketilmayapti, ko'cha iflos.",Ekologiya va obodonlashtirish,,Ekologiya va obodonlashtirish,0.371027,Yo'l boshqarmasi,0.006,Transport / Yo'l harakati xavfsizligi,0.0045,chiqindi; iflos,citizen_clarification,1

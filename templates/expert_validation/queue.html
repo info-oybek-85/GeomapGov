@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}AI ekspert tekshiruvi{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col-12"><h4 class="text-white">AI ekspert tekshiruvi</h4><p class="text-white opacity-8">Human-in-the-Loop tasdiqlash navbati</p></div>
+  </div>
+  <div class="row g-3 mb-4">
+    {% for label,value,color in stats_cards %}{% endfor %}
+    <div class="col-6 col-lg"><div class="card"><div class="card-body p-3"><p class="text-sm mb-1">Jami</p><h4 class="mb-0">{{ totals.total }}</h4></div></div></div>
+    <div class="col-6 col-lg"><div class="card"><div class="card-body p-3"><p class="text-sm mb-1">Kutilmoqda</p><h4 class="mb-0 text-warning">{{ totals.pending }}</h4></div></div></div>
+    <div class="col-6 col-lg"><div class="card"><div class="card-body p-3"><p class="text-sm mb-1">Tasdiqlangan</p><h4 class="mb-0 text-success">{{ totals.verified }}</h4></div></div></div>
+    <div class="col-6 col-lg"><div class="card"><div class="card-body p-3"><p class="text-sm mb-1">Tuzatilgan</p><h4 class="mb-0 text-info">{{ totals.corrected }}</h4></div></div></div>
+    <div class="col-6 col-lg"><div class="card"><div class="card-body p-3"><p class="text-sm mb-1">Rad etilgan</p><h4 class="mb-0 text-danger">{{ totals.rejected }}</h4></div></div></div>
+  </div>
+  <div class="card mb-4"><div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-5"><label class="form-label">Qidiruv</label><input name="q" value="{{ q }}" class="form-control" placeholder="Murojaat yoki tashkilot"></div>
+      <div class="col-md-3"><label class="form-label">Ekspert holati</label><select name="status" class="form-select"><option value="all">Barchasi</option><option value="pending" {% if status_value == 'pending' %}selected{% endif %}>Kutilmoqda</option><option value="verified" {% if status_value == 'verified' %}selected{% endif %}>Tasdiqlangan</option><option value="corrected" {% if status_value == 'corrected' %}selected{% endif %}>Tuzatilgan</option><option value="rejected" {% if status_value == 'rejected' %}selected{% endif %}>Rad etilgan</option></select></div>
+      <div class="col-md-2"><label class="form-label">AI tanlovi</label><select name="accepted" class="form-select"><option value="">Barchasi</option><option value="yes" {% if accepted == 'yes' %}selected{% endif %}>Qabul qilingan</option><option value="no" {% if accepted == 'no' %}selected{% endif %}>O‘zgartirilgan</option></select></div>
+      <div class="col-md-2"><button class="btn btn-dark w-100 mb-0">Filtrlash</button></div>
+    </form>
+  </div></div>
+  <div class="card"><div class="table-responsive"><table class="table align-items-center mb-0">
+    <thead><tr><th>Murojaat</th><th>AI tavsiyasi</th><th>Fuqaro tanlovi</th><th>Ishonch</th><th>Holat</th><th></th></tr></thead>
+    <tbody>{% for item in page_obj %}<tr>
+      <td style="max-width:420px;white-space:normal"><strong>#{{ item.pk }}</strong><br>{{ item.text|truncatechars:160 }}<br><small>{{ item.created_at|date:"d.m.Y H:i" }}</small></td>
+      <td>{{ item.predicted_organization|default:"-" }}</td><td>{{ item.selected_organization|default:"-" }}</td>
+      <td>{{ item.confidence|floatformat:1 }}{% if item.confidence <= 1 %}{% widthratio item.confidence 1 100 %}%{% else %}%{% endif %}</td>
+      <td><span class="badge bg-gradient-{% if item.expert_status == 'pending' %}warning{% elif item.expert_status == 'verified' %}success{% elif item.expert_status == 'corrected' %}info{% else %}danger{% endif %}">{{ item.get_expert_status_display }}</span></td>
+      <td><a class="btn btn-sm btn-primary mb-0" href="{% url 'dashboard:expert_validation_detail' item.pk %}">Tekshirish</a></td>
+    </tr>{% empty %}<tr><td colspan="6" class="text-center py-5">Mos yozuv topilmadi.</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+  {% if page_obj.paginator.num_pages > 1 %}<nav class="mt-3"><ul class="pagination justify-content-center">{% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status_value }}&q={{ q }}&accepted={{ accepted }}">Oldingi</a></li>{% endif %}<li class="page-item active"><span class="page-link">{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</span></li>{% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status_value }}&q={{ q }}&accepted={{ accepted }}">Keyingi</a></li>{% endif %}</ul></nav>{% endif %}
+</div>
+{% endblock %}

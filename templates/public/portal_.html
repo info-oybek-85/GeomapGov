@@ -1,0 +1,220 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartGeoAI — AI + GIS murojaatlar platformasi</title>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/smartgeoai-portal.css' %}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body class="sg-portal">
+
+<header class="sg-nav">
+  <a class="sg-brand" href="{% url 'dashboard:public_portal' %}">
+    <span class="sg-brand-mark">◎</span><span>SmartGeoAI</span>
+  </a>
+
+  <nav class="sg-public-navlinks">
+    <a href="#imkoniyatlar">Imkoniyatlar</a>
+    <a href="#geoxarita">Geoxarita</a>
+    <a href="#ilmiy-loyiha">Ilmiy loyiha</a>
+  </nav>
+
+  <div class="sg-nav-actions">
+    {% if telegram_bot_url %}
+      <a href="{{ telegram_bot_url }}" target="_blank" rel="noopener" class="sg-btn sg-btn-telegram sg-pulse">✈ Telegram Bot</a>
+    {% endif %}
+    <button class="sg-btn sg-btn-primary" type="button" onclick="openLoginModal()">Tizimga kirish →</button>
+  </div>
+</header>
+
+<main>
+  <section class="sg-hero">
+    <div class="sg-hero-copy">
+      <div class="sg-badges">
+        <span class="sg-badge">AI Analysis</span>
+        <span class="sg-badge">GIS Monitoring</span>
+        <span class="sg-badge">GSOR Routing</span>
+        <span class="sg-badge">Human-in-the-Loop</span>
+      </div>
+      <h1>Aholi murojaatlarini AI va GIS asosida boshqarish platformasi</h1>
+      <p>
+        SmartGeoAI murojaat mazmunini tahlil qiladi, lokatsiyani hisobga oladi,
+        mas’ul tashkilotni tavsiya qiladi va ijro jarayonini fuqaro tasdig‘igacha kuzatadi.
+      </p>
+      <div class="sg-hero-actions">
+        <button class="sg-btn sg-btn-primary" type="button" onclick="openLoginModal()">Tizimga kirish →</button>
+        {% if telegram_bot_url %}
+          <a href="{{ telegram_bot_url }}" target="_blank" rel="noopener" class="sg-btn sg-btn-telegram">✈ Telegram orqali murojaat yuborish</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="sg-banner-shell">
+      <img src="{% static 'img/smartgeoai-portal-banner.png' %}" alt="SmartGeoAI platformasi">
+    </div>
+  </section>
+
+  <section class="sg-stats">
+    <div class="sg-stat"><strong>{{ total_reports }}</strong><span>Jami murojaatlar</span></div>
+    <div class="sg-stat"><strong>{{ resolved_reports }}</strong><span>Hal qilingan</span></div>
+    <div class="sg-stat"><strong>{{ resolved_percent }}%</strong><span>Hal etish ulushi</span></div>
+    <div class="sg-stat"><strong>{{ organizations_count }}</strong><span>Tashkilotlar</span></div>
+  </section>
+
+  <section class="sg-status-wrap">
+    <div class="sg-status-panel">
+      <div class="sg-status-head">
+        <h3>Platform Status</h3>
+        <span>Joriy konfiguratsiya va ma’lumotlar asosida</span>
+      </div>
+      <div class="sg-status-grid">
+        {% for item in platform_status %}
+          <div class="sg-status-item">
+            <div class="sg-status-title">{{ item.name }}</div>
+            <div class="sg-status-value">
+              <span class="sg-led {% if item.ok %}ok{% else %}bad{% endif %}"></span>
+              {{ item.label }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="imkoniyatlar">
+    <div class="sg-section-title">
+      <h2>Platforma imkoniyatlari</h2>
+      <p>Fuqarodan tashkilotgacha bo‘lgan butun jarayon yagona raqamli muhitda.</p>
+    </div>
+
+    <div class="sg-features">
+      <div class="sg-feature"><div class="sg-feature-icon">🧠</div><h3>AI tahlil</h3><p>Murojaat matni normalizatsiya qilinadi, muammo turi va mas’ul tashkilot aniqlanadi.</p></div>
+      <div class="sg-feature"><div class="sg-feature-icon">🗺</div><h3>GIS monitoring</h3><p>Murojaatlar lokatsiyasi, hotspot va hududiy muammo zichligi geoxaritada ko‘rsatiladi.</p></div>
+      <div class="sg-feature"><div class="sg-feature-icon">🧭</div><h3>GSOR routing</h3><p>Asosiy va alternativ tashkilotlar Top-k ranking orqali tavsiya qilinadi.</p></div>
+      <div class="sg-feature"><div class="sg-feature-icon">🤖</div><h3>Telegram Bot</h3><p>Fuqaro va xodim murojaat jarayonining asosiy amallarini Telegram orqali bajaradi.</p></div>
+      <div class="sg-feature"><div class="sg-feature-icon">✅</div><h3>Fuqaro tasdig‘i</h3><p>Murojaat yakuniy hal qilingan deb faqat fuqaro tasdiqlagandan keyin belgilanadi.</p></div>
+      <div class="sg-feature"><div class="sg-feature-icon">📊</div><h3>Platform Intelligence</h3><p>Modullar sifati, AI metrikalari va takomillashtirish tavsiyalari avtomatik baholanadi.</p></div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="geoxarita">
+    <div class="sg-section-title">
+      <h2>Ochiq geoxarita</h2>
+      <p>Faqat hal qilingan murojaatlarning anonimlashtirilgan hududiy ko‘rinishi.</p>
+    </div>
+
+    <div class="sg-public-map-wrap">
+      <div id="publicResolvedMap"
+           class="sg-public-map"
+           data-url="{% url 'dashboard:public_resolved_map_data' %}"></div>
+      <div class="sg-map-note">
+        <span>🔒</span>
+        <div>
+          Public xaritada shaxsiy ma’lumotlar ko‘rsatilmaydi. Lokatsiya aniqligi maxfiylik uchun
+          taxminan 3 kasr xonasigacha yaxlitlangan. Xarita hozir <b id="publicMapCount">0</b> ta
+          hal qilingan murojaatni ko‘rsatmoqda.
+          <span id="publicMapMessage"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="ilmiy-loyiha">
+    <div class="sg-section-title">
+      <h2>SmartGeoAI ilmiy arxitekturasi</h2>
+      <p>Platformadagi ilmiy modullar real murojaatlar oqimida bir-biri bilan integratsiyalangan.</p>
+    </div>
+
+    <div class="sg-research-grid">
+      <div class="sg-research-card"><h3>GeoAI Fusion</h3><p>Matn, lokatsiya va hududiy kontekstni birlashtirib murojaatni fazoviy-intellektual tahlil qiladi.</p></div>
+      <div class="sg-research-card"><h3>GSOR</h3><p>Asosiy va alternativ mas’ul tashkilotlarni Top-k ranking orqali aniqlashga yo‘naltirilgan routing modeli.</p></div>
+      <div class="sg-research-card"><h3>Human-in-the-Loop</h3><p>AI taxminlari ekspert tomonidan tasdiqlanadi yoki tuzatiladi va verified dataset shakllanadi.</p></div>
+      <div class="sg-research-card"><h3>Platform Intelligence</h3><p>Modullar holatini baholash, diagnostika va takomillashtirish tavsiyalarini yagona markazda jamlaydi.</p></div>
+    </div>
+
+    <div class="sg-section-title" style="margin-top:34px">
+      <h2 style="font-size:20px">Ilmiy pipeline</h2>
+    </div>
+
+    <div class="sg-pipeline">
+      <div class="sg-pipeline-step"><div class="sg-pipeline-no">1</div><b>Real murojaat</b><div>Telegram yoki web orqali matn va geolokatsiya qabul qilinadi.</div></div>
+      <div class="sg-pipeline-step"><div class="sg-pipeline-no">2</div><b>AI / GSOR tahlili</b><div>Muammo turi va tashkilotlar ranking qilinadi.</div></div>
+      <div class="sg-pipeline-step"><div class="sg-pipeline-no">3</div><b>Ekspert tekshiruvi</b><div>Kam ishonchli yoki murakkab holatlar Human-in-the-Loop orqali tekshiriladi.</div></div>
+      <div class="sg-pipeline-step"><div class="sg-pipeline-no">4</div><b>Verified dataset</b><div>Tasdiqlangan va tuzatilgan holatlar ilmiy datasetga qo‘shiladi.</div></div>
+      <div class="sg-pipeline-step"><div class="sg-pipeline-no">5</div><b>Qayta baholash</b><div>Top-k, MRR, K-Fold va boshqa metrikalar bilan sifat nazorat qilinadi.</div></div>
+    </div>
+  </section>
+</main>
+
+<footer class="sg-footer">
+  <span>© 2026 SmartGeoAI</span>
+  <span>AI + GIS + GSOR · GeoAI Research Platform</span>
+</footer>
+
+<div class="sg-modal-backdrop" id="loginModal" onclick="modalBackdropClick(event)">
+  <div class="sg-modal">
+    <div class="sg-modal-form">
+      <div class="sg-modal-head">
+        <div>
+          <div style="font-size:11px;color:#8898aa;text-transform:uppercase;letter-spacing:.08em">SmartGeoAI Secure Access</div>
+          <h3>Tizimga kirish</h3>
+        </div>
+        <button class="sg-close" type="button" onclick="closeLoginModal()">✕</button>
+      </div>
+
+      <form method="post" action="{% url 'dashboard:login' %}" onsubmit="loginSubmitting(this)">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'dashboard:home' %}">
+        <div class="sg-field">
+          <label>Login yoki telefon</label>
+          <input type="text" name="username" autocomplete="username" required placeholder="Loginni kiriting">
+        </div>
+        <div class="sg-field">
+          <label>Parol</label>
+          <input type="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+        </div>
+        <div class="sg-row">
+          <label style="display:flex;align-items:center;gap:7px">
+            <input type="checkbox" name="remember_me"> Meni eslab qoling
+          </label>
+        </div>
+        <button class="sg-btn sg-btn-primary sg-login-btn" type="submit" id="loginSubmitBtn">Tizimga kirish →</button>
+      </form>
+
+      {% if telegram_bot_url %}
+      <div class="sg-or">yoki</div>
+      <a href="{{ telegram_bot_url }}" target="_blank" rel="noopener" class="sg-btn sg-btn-telegram sg-login-btn">✈ Telegram Bot orqali murojaat yuborish</a>
+      {% endif %}
+
+      <div class="sg-login-note">
+        Ushbu bo‘lim tizim administratorlari, tashkilot rahbarlari, dispatcher va xodimlar uchun mo‘ljallangan.
+      </div>
+    </div>
+    <div class="sg-modal-visual"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/smartgeoai-public-map.js' %}"></script>
+<script>
+function openLoginModal(){
+  document.getElementById('loginModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>{const el=document.querySelector('#loginModal input[name="username"]');if(el)el.focus()},80);
+}
+function closeLoginModal(){
+  document.getElementById('loginModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+function modalBackdropClick(e){if(e.target.id==='loginModal')closeLoginModal()}
+function loginSubmitting(){
+  const btn=document.getElementById('loginSubmitBtn');
+  if(btn){btn.disabled=true;btn.textContent='Kirilmoqda...'}
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLoginModal()});
+</script>
+</body>
+</html>

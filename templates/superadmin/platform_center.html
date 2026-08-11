@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Platform markazi | SmartGeoAI{% endblock %}
+{% block breadcrumb %}Platform markazi{% endblock %}
+
+{% block content %}
+<style>
+  .pc-hero{
+    background:linear-gradient(135deg,#172b4d 0%,#344767 48%,#5e72e4 100%);
+    border-radius:18px;padding:25px;color:#fff;margin-bottom:24px;
+  }
+  .pc-card{
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:16px;background:#fff;height:100%;transition:.18s ease;
+  }
+  .pc-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(50,50,93,.12);}
+  .pc-card .body{padding:20px}
+  .pc-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .pc-value{font-size:25px;font-weight:800;color:#172b4d}
+  .pc-muted{font-size:12px;color:#8898aa}
+
+@media(max-width:768px){
+  .pc-hero{padding:18px!important;border-radius:14px!important;margin-bottom:16px!important}
+  .pc-hero h3{font-size:1.35rem!important}
+  .pc-card:hover{transform:none!important}
+  .pc-card .body{padding:16px!important}
+  .pc-card .btn{width:100%!important}
+}
+
+</style>
+
+<div class="pc-hero">
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+    <div>
+      <div class="text-xs text-uppercase mb-1" style="opacity:.75">SmartGeoAI</div>
+      <h3 class="text-white mb-1">Platform Intelligence Center</h3>
+      <div style="opacity:.82">Operatsion, GeoAI, sifat nazorati va ilmiy modullarni yagona markazdan boshqarish.</div>
+    </div>
+    <div class="text-lg-end">
+      <div class="text-sm" style="opacity:.75">Jami murojaatlar</div>
+      <div class="h2 text-white mb-0">{{ total_reports }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-4 col-md-6">
+    <div class="pc-card"><div class="body">
+      <div class="d-flex gap-3 align-items-center">
+        <div class="pc-icon bg-gradient-info text-white">🗺</div>
+        <div><h6 class="mb-0">GeoAI Analytics</h6><div class="pc-muted">Xarita, GeoPriority, GeoRisk, model tahlili</div></div>
+      </div>
+      <div class="mt-3"><span class="pc-value">{{ geo_coverage }}%</span><span class="pc-muted ms-2">lokatsiya qamrovi</span></div>
+      <a class="btn btn-sm btn-outline-info mt-3 mb-0" href="{% url 'geoai:analytics' %}">Ochish →</a>
+    </div></div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="pc-card"><div class="body">
+      <div class="d-flex gap-3 align-items-center">
+        <div class="pc-icon bg-gradient-primary text-white">📊</div>
+        <div><h6 class="mb-0">Tizim baholash markazi</h6><div class="pc-muted">12 modul, diagnostika va takomillashtirish rejasi</div></div>
+      </div>
+      <div class="mt-3"><span class="pc-value">12</span><span class="pc-muted ms-2">asosiy modul</span></div>
+      <a class="btn btn-sm btn-outline-primary mt-3 mb-0" href="{% url 'geoai:system_evaluation' %}">Baholash →</a>
+    </div></div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="pc-card"><div class="body">
+      <div class="d-flex gap-3 align-items-center">
+        <div class="pc-icon bg-gradient-warning text-white">🧠</div>
+        <div><h6 class="mb-0">Expert Validation</h6><div class="pc-muted">AI taxminlarini Human-in-the-Loop tekshiruvi</div></div>
+      </div>
+      {% if expert_available %}
+        <div class="mt-3"><span class="pc-value">{{ pending_expert }}</span><span class="pc-muted ms-2">tekshirilmagan</span></div>
+        <a class="btn btn-sm btn-outline-warning mt-3 mb-0" href="{% url 'dashboard:expert_validation_queue' %}">Tekshirish →</a>
+      {% else %}
+        <div class="alert alert-warning mt-3 mb-0 py-2 text-white text-xs">
+          Expert Validation jadvali hali yaratilmagan. Migratsiya talab qilinadi.
+        </div>
+      {% endif %}
+    </div></div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="pc-card"><div class="body">
+      <div class="d-flex gap-3 align-items-center">
+        <div class="pc-icon bg-gradient-success text-white">🧭</div>
+        <div><h6 class="mb-0">GSOR Routing</h6><div class="pc-muted">Primary + alternativ tashkilotlar, Top-k va MRR</div></div>
+      </div>
+      <div class="mt-3">
+        {% if gsor.top1_accuracy != None %}
+          <span class="pc-value">{{ gsor.top1_accuracy|floatformat:3 }}</span><span class="pc-muted ms-2">Top-1 Accuracy</span>
+        {% else %}
+          <span class="pc-value">—</span><span class="pc-muted ms-2">real baholash kutilmoqda</span>
+        {% endif %}
+      </div>
+      <a class="btn btn-sm btn-outline-success mt-3 mb-0" href="{% url 'dashboard:gsor_center' %}">Natijalar →</a>
+    </div></div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="pc-card"><div class="body">
+      <div class="d-flex gap-3 align-items-center">
+        <div class="pc-icon bg-gradient-secondary text-white">🗃</div>
+        <div><h6 class="mb-0">Verified Dataset</h6><div class="pc-muted">Ekspert tasdiqlagan routing dataset</div></div>
+      </div>
+      <div class="mt-3"><span class="pc-value">{{ verified_expert }}</span><span class="pc-muted ms-2">verified / corrected</span></div>
+      {% if expert_available %}
+      <a class="btn btn-sm btn-outline-secondary mt-3 mb-0" href="{% url 'dashboard:expert_validation_queue' %}">Dataset manbasi →</a>
+      {% endif %}
+    </div></div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="pc-card"><div class="body">
+      <div class="d-flex gap-3 align-items-center">
+        <div class="pc-icon bg-gradient-dark text-white">⚙</div>
+        <div><h6 class="mb-0">Texnik boshqaruv</h6><div class="pc-muted">Django admin va tizim obyektlari</div></div>
+      </div>
+      <div class="mt-3"><span class="pc-value">Admin</span><span class="pc-muted ms-2">nazorat</span></div>
+      <a class="btn btn-sm btn-outline-dark mt-3 mb-0" href="/admin/">Admin panel →</a>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

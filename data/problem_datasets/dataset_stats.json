@@ -1,0 +1,19 @@
+{
+  "total_reports": 100,
+  "electricity": 1,
+  "ecology": 5,
+  "complex": 0,
+  "unlabeled": 94,
+  "expert_verified": 0,
+  "labels": {
+    "ECO_WASTE": 5,
+    "ELEC_OUTAGE": 1
+  },
+  "files": {
+    "electricity": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\data\\problem_datasets\\electricity_real.csv",
+    "ecology": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\data\\problem_datasets\\ecology_real.csv",
+    "complex": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\data\\problem_datasets\\complex_cases_real.csv",
+    "unlabeled": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\data\\problem_datasets\\unlabeled_for_expert.csv",
+    "all": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\data\\problem_datasets\\all_real_reports.csv"
+  }
+}

@@ -1,0 +1,49 @@
+﻿admin
+ [X] 0001_initial
+ [X] 0002_logentry_remove_auto_add
+ [X] 0003_logentry_add_action_flag_choices
+auth
+ [X] 0001_initial
+ [X] 0002_alter_permission_name_max_length
+ [X] 0003_alter_user_email_max_length
+ [X] 0004_alter_user_username_opts
+ [X] 0005_alter_user_last_login_null
+ [X] 0006_require_contenttypes_0002
+ [X] 0007_alter_validators_add_error_messages
+ [X] 0008_alter_user_username_max_length
+ [X] 0009_alter_user_last_name_max_length
+ [X] 0010_alter_group_name_max_length
+ [X] 0011_update_proxy_permissions
+ [X] 0012_alter_user_first_name_max_length
+contenttypes
+ [X] 0001_initial
+ [X] 0002_remove_content_type_name
+geoai
+ [X] 0001_initial
+organizations
+ [X] 0001_initial
+ [X] 0002_organization_organization_icon
+ [X] 0003_telegramstafflink
+ [X] 0004_organizationpredictionfeedback
+ [X] 0005_expert_validation_fields
+ [X] 0006_alter_organization_id_alter_organizationmember_id_and_more
+reports
+ [X] 0001_initial
+ [X] 0002_alter_report_latitude_alter_report_longitude
+ [X] 0003_workflow_tracking
+ [X] 0004_report_work_evidence
+sessions
+ [X] 0001_initial
+token_blacklist
+ [X] 0001_initial
+ [X] 0002_outstandingtoken_jti_hex
+ [X] 0003_auto_20171017_2007
+ [X] 0004_auto_20171017_2013
+ [X] 0005_remove_outstandingtoken_jti
+ [X] 0006_auto_20171017_2113
+ [X] 0007_auto_20171017_2214
+ [X] 0008_migrate_to_bigautofield
+ [X] 0010_fix_migrate_to_bigautofield
+ [X] 0011_linearizes_history
+ [X] 0012_alter_outstandingtoken_user
+ [X] 0013_alter_blacklistedtoken_options_and_more

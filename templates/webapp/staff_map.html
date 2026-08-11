@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Mening vazifalarim xaritasi</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+html,body{margin:0;height:100%;font-family:Arial,sans-serif;background:#f4f6fb;color:#263238}
+header{padding:10px 12px;background:#fff;border-bottom:1px solid #e7e9ef}
+.title{font-size:17px;font-weight:700}.summary{font-size:12px;color:#667085;margin-top:3px}
+.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:7px;padding:8px 10px;background:white}
+select,button{min-width:0;padding:9px;border:1px solid #d8dce5;border-radius:10px;background:#fff}
+button{background:#526ed3;color:white;font-weight:700}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:7px 10px;background:#fff;border-bottom:1px solid #e7e9ef}
+.chip{white-space:nowrap;padding:7px 10px;border-radius:18px;background:#f3f5f9;font-size:12px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+.notice{padding:7px 10px;background:#fff4cc;color:#765b00;font-size:12px}
+#map{height:calc(100vh - 181px);min-height:360px}
+.leaflet-container img,.leaflet-tile-pane img{max-width:none!important;max-height:none!important}
+.leaflet-tile{width:256px!important;height:256px!important}
+</style>
+</head>
+<body>
+{% if invalid %}
+<div style="padding:30px">Havola eskirgan. Botdan xaritani qayta oching.</div>
+{% else %}
+<header>
+  <div class="title">📍 Mening vazifalarim geoxaritasi</div>
+  <div class="summary">Biriktirilgan: {{ assignment_count }} ta · Xaritada: {{ count }} ta</div>
+</header>
+<div class="chips">
+  <span class="chip"><span class="dot" style="background:#526ed3"></span>Biriktirilgan {{ status_counts.assigned }}</span>
+  <span class="chip"><span class="dot" style="background:#ff9800"></span>Jarayonda {{ status_counts.in_progress }}</span>
+  <span class="chip"><span class="dot" style="background:#00bcd4"></span>Tasdiq kutilmoqda {{ status_counts.pending_confirmation }}</span>
+  <span class="chip"><span class="dot" style="background:#22b573"></span>Hal qilingan {{ status_counts.resolved }}</span>
+</div>
+<form class="filters" method="get">
+  <input type="hidden" name="token" value="{{ token }}">
+  <select name="period">
+    <option value="all" {% if period == 'all' %}selected{% endif %}>Barcha davr</option>
+    <option value="day" {% if period == 'day' %}selected{% endif %}>Bugungi</option>
+    <option value="week" {% if period == 'week' %}selected{% endif %}>Haftalik</option>
+    <option value="month" {% if period == 'month' %}selected{% endif %}>Oylik</option>
+    <option value="year" {% if period == 'year' %}selected{% endif %}>Yillik</option>
+  </select>
+  <select name="status">
+    <option value="all" {% if status == 'all' %}selected{% endif %}>Barchasi</option>
+    <option value="active" {% if status == 'active' %}selected{% endif %}>Faol</option>
+    <option value="assigned" {% if status == 'assigned' %}selected{% endif %}>Biriktirilgan</option>
+    <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
+    <option value="pending" {% if status == 'pending' %}selected{% endif %}>Tasdiq kutilmoqda</option>
+    <option value="resolved" {% if status == 'resolved' %}selected{% endif %}>Hal qilingan</option>
+    <option value="overdue" {% if status == 'overdue' %}selected{% endif %}>Muddati o‘tgan</option>
+  </select>
+  <button type="submit">Ko‘rsatish</button>
+</form>
+{% if without_location %}<div class="notice">⚠️ {{ without_location }} ta vazifada koordinata yo‘q, shu sabab xaritada ko‘rsatilmagan.</div>{% endif %}
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const pts={{ points|safe }};
+const map=L.map('map').setView([41.3111,69.2797],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+const colors={assigned:'#526ed3',in_progress:'#ff9800',pending_confirmation:'#00bcd4',resolved:'#22b573',reopened:'#f44336'};
+const bounds=[];
+pts.forEach(p=>{
+  const icon=L.divIcon({className:'',html:`<div style="width:20px;height:20px;background:${colors[p.status]||'#555'};border:3px solid white;border-radius:50%;box-shadow:0 2px 8px #555"></div>`,iconSize:[20,20],iconAnchor:[10,10]});
+  const phone=p.phone?`<a href="tel:${p.phone}">${p.phone}</a>`:'-';
+  L.marker([p.lat,p.lng],{icon}).addTo(map).bindPopup(`<b>${p.title}</b><br>${p.status_label}<br>👤 ${p.name}<br>📞 ${phone}<br>⏰ ${p.deadline}<br>${(p.description||'').slice(0,130)}<br><a target="_blank" href="https://www.google.com/maps?q=${p.lat},${p.lng}">📍 Navigatsiya</a>`);
+  bounds.push([p.lat,p.lng]);
+});
+function fitMap(){map.invalidateSize();if(bounds.length===1)map.setView(bounds[0],15);else if(bounds.length)map.fitBounds(bounds,{padding:[30,30],maxZoom:15});}
+setTimeout(fitMap,250);setTimeout(fitMap,900);
+</script>
+{% endif %}
+</body>
+</html>

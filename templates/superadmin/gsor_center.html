@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}GSOR Routing | SmartGeoAI{% endblock %}
+{% block breadcrumb %}GSOR Routing{% endblock %}
+
+{% block content %}
+<style>
+  .gsor-metric{border:1px solid rgba(0,0,0,.06);border-radius:16px;background:#fff;padding:18px;height:100%}
+  .gsor-value{font-size:28px;font-weight:800;color:#172b4d}
+
+@media(max-width:768px){
+  .gsor-metric{padding:14px!important}
+  .gsor-value{font-size:23px!important}
+  .gsor-head-btn{width:100%!important}
+}
+
+</style>
+
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">Geo Semantic Organization Routing (GSOR)</h4>
+    <div class="text-sm text-secondary">
+      Murojaat matni asosida asosiy va alternativ tashkilotlarni rank qilish ilmiy moduli.
+    </div>
+  </div>
+  <a href="{% url 'dashboard:platform_center' %}" class="btn btn-sm btn-outline-primary mb-0">← Platform markazi</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="gsor-metric"><div class="text-xs text-uppercase text-secondary">Top-1 Accuracy</div><div class="gsor-value">{{ metrics.top1_accuracy|default:"—" }}</div></div></div>
+  <div class="col-md-3"><div class="gsor-metric"><div class="text-xs text-uppercase text-secondary">Top-3 Accuracy</div><div class="gsor-value">{{ metrics.top3_accuracy|default:"—" }}</div></div></div>
+  <div class="col-md-3"><div class="gsor-metric"><div class="text-xs text-uppercase text-secondary">MRR</div><div class="gsor-value">{{ metrics.mrr|default:"—" }}</div></div></div>
+  <div class="col-md-3"><div class="gsor-metric"><div class="text-xs text-uppercase text-secondary">Verified yozuv</div><div class="gsor-value">{{ verified_count }}</div></div></div>
+</div>
+
+{% if not has_evaluation %}
+<div class="alert alert-warning text-white">
+  Real GSOR baholash hali tayyor emas. Avval Expert Validation → verified dataset → `evaluate_gsor_dataset` ketma-ketligini bajaring.
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header pb-0"><h6>Oxirgi GSOR predictionlari</h6></div>
+  <div class="table-responsive">
+    <table class="table align-items-center mb-0" style="min-width:980px">
+      <thead>
+        <tr>
+          <th>Murojaat</th><th>Haqiqiy tashkilot</th><th>Top-1</th><th>Top-2</th><th>Top-3</th><th>Qaror</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in predictions %}
+        <tr>
+          <td style="max-width:360px;white-space:normal">{{ r.text|truncatechars:110 }}</td>
+          <td>{{ r.true_primary_organization|default:"-" }}</td>
+          <td><b>{{ r.top1 }}</b><div class="text-xs text-secondary">{{ r.top1_score }}</div></td>
+          <td>{{ r.top2 }}<div class="text-xs text-secondary">{{ r.top2_score }}</div></td>
+          <td>{{ r.top3 }}<div class="text-xs text-secondary">{{ r.top3_score }}</div></td>
+          <td><span class="badge bg-gradient-secondary">{{ r.decision }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center py-4 text-secondary">Hali GSOR prediction fayli yo‘q.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

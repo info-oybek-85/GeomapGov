@@ -1,0 +1,230 @@
+{
+  "summary": {
+    "checks_total": 31,
+    "passed": 30,
+    "failed": 1,
+    "critical": 0,
+    "errors": 0,
+    "warnings": 1,
+    "release_ready": true
+  },
+  "checks": [
+    {
+      "group": "database",
+      "name": "DB connection",
+      "ok": true,
+      "detail": "SELECT 1 OK",
+      "severity": "critical"
+    },
+    {
+      "group": "database",
+      "name": "Table: reports_report",
+      "ok": true,
+      "detail": "mavjud",
+      "severity": "error"
+    },
+    {
+      "group": "database",
+      "name": "Table: organizations_organization",
+      "ok": true,
+      "detail": "mavjud",
+      "severity": "error"
+    },
+    {
+      "group": "database",
+      "name": "Table: organizations_organizationpredictionfeedback",
+      "ok": true,
+      "detail": "mavjud",
+      "severity": "critical"
+    },
+    {
+      "group": "urls",
+      "name": "Main entry",
+      "ok": true,
+      "detail": "/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "Login",
+      "ok": true,
+      "detail": "/login/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "Public portal",
+      "ok": true,
+      "detail": "/portal/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "Platform center",
+      "ok": true,
+      "detail": "/platform-center/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "GSOR center",
+      "ok": true,
+      "detail": "/gsor-center/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "GeoAI Lab",
+      "ok": true,
+      "detail": "/geoai-lab/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "Expert validation",
+      "ok": true,
+      "detail": "/expert-validation/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "GeoAI analytics",
+      "ok": true,
+      "detail": "/geoai/",
+      "severity": "error"
+    },
+    {
+      "group": "urls",
+      "name": "System evaluation",
+      "ok": true,
+      "detail": "/geoai/system-evaluation/",
+      "severity": "error"
+    },
+    {
+      "group": "templates",
+      "name": "base.html",
+      "ok": true,
+      "detail": "load OK",
+      "severity": "error"
+    },
+    {
+      "group": "templates",
+      "name": "public/portal.html",
+      "ok": true,
+      "detail": "load OK",
+      "severity": "error"
+    },
+    {
+      "group": "templates",
+      "name": "superadmin/dashboard.html",
+      "ok": true,
+      "detail": "load OK",
+      "severity": "error"
+    },
+    {
+      "group": "templates",
+      "name": "superadmin/platform_center.html",
+      "ok": true,
+      "detail": "load OK",
+      "severity": "error"
+    },
+    {
+      "group": "templates",
+      "name": "superadmin/gsor_center.html",
+      "ok": true,
+      "detail": "load OK",
+      "severity": "error"
+    },
+    {
+      "group": "templates",
+      "name": "superadmin/geoai_lab.html",
+      "ok": true,
+      "detail": "load OK",
+      "severity": "error"
+    },
+    {
+      "group": "static",
+      "name": "static/css/smartgeoai-portal.css",
+      "ok": true,
+      "detail": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\static\\css\\smartgeoai-portal.css | 19102 bytes",
+      "severity": "warning"
+    },
+    {
+      "group": "static",
+      "name": "static/js/smartgeoai-public-map.js",
+      "ok": true,
+      "detail": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\static\\js\\smartgeoai-public-map.js | 4701 bytes",
+      "severity": "warning"
+    },
+    {
+      "group": "static",
+      "name": "static/js/smartgeoai-public-analytics.js",
+      "ok": true,
+      "detail": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\static\\js\\smartgeoai-public-analytics.js | 3533 bytes",
+      "severity": "warning"
+    },
+    {
+      "group": "static",
+      "name": "static/js/smartgeoai-research-transparency.js",
+      "ok": true,
+      "detail": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\static\\js\\smartgeoai-research-transparency.js | 1898 bytes",
+      "severity": "warning"
+    },
+    {
+      "group": "static",
+      "name": "static/img/smartgeoai-portal-banner.png",
+      "ok": true,
+      "detail": "F:\\PhD nomzodlar\\Jamoliddin\\Dissertatsiya\\Jamoliddin\\new\\SmartGeoAI_Staff_Assignment_Map_Fix_V9_2\\workflow2\\static\\img\\smartgeoai-portal-banner.png | 3040195 bytes",
+      "severity": "warning"
+    },
+    {
+      "group": "artifacts",
+      "name": "data/gsor/gsor_evaluation.json",
+      "ok": true,
+      "detail": "233 bytes | keys=['records_total', 'records_with_reference_label', 'top1_accuracy', 'top3_accuracy', 'mrr', 'note']",
+      "severity": "warning"
+    },
+    {
+      "group": "artifacts",
+      "name": "data/gsor/gsor_predictions.csv",
+      "ok": true,
+      "detail": "1299 bytes",
+      "severity": "warning"
+    },
+    {
+      "group": "artifacts",
+      "name": "data/problem_datasets/verified_routing_dataset.csv",
+      "ok": true,
+      "detail": "159 bytes",
+      "severity": "warning"
+    },
+    {
+      "group": "settings",
+      "name": "DEBUG",
+      "ok": false,
+      "detail": "DEBUG=True",
+      "severity": "warning"
+    },
+    {
+      "group": "settings",
+      "name": "ALLOWED_HOSTS",
+      "ok": true,
+      "detail": "fastappeal.uz, www.fastappeal.uz, localhost, 127.0.0.1",
+      "severity": "warning"
+    },
+    {
+      "group": "settings",
+      "name": "Telegram bot URL",
+      "ok": true,
+      "detail": "https://t.me/AholiMurojatlariGeoxaritasi_bot",
+      "severity": "warning"
+    },
+    {
+      "group": "urls",
+      "name": "Duplicate routes",
+      "ok": true,
+      "detail": "yo'q",
+      "severity": "warning"
+    }
+  ]
+}

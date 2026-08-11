@@ -1,0 +1,5 @@
+# dashboard/urls.py ga qo'shing:
+from . import portal_views
+
+# urlpatterns ichiga:
+path("portal/", portal_views.public_portal, name="public_portal"),

@@ -1,0 +1,78 @@
+{
+  "created_at": "2026-08-03T07:01:44",
+  "n_splits": 5,
+  "dataset_size": 50,
+  "class_counts": {
+    "road": 16,
+    "waste": 13,
+    "traffic": 13,
+    "ecology": 8
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "test_size": 10,
+      "accuracy": 1.0,
+      "precision_weighted": 1.0,
+      "recall_weighted": 1.0,
+      "f1_weighted": 1.0
+    },
+    {
+      "fold": 2,
+      "test_size": 10,
+      "accuracy": 1.0,
+      "precision_weighted": 1.0,
+      "recall_weighted": 1.0,
+      "f1_weighted": 1.0
+    },
+    {
+      "fold": 3,
+      "test_size": 10,
+      "accuracy": 1.0,
+      "precision_weighted": 1.0,
+      "recall_weighted": 1.0,
+      "f1_weighted": 1.0
+    },
+    {
+      "fold": 4,
+      "test_size": 10,
+      "accuracy": 1.0,
+      "precision_weighted": 1.0,
+      "recall_weighted": 1.0,
+      "f1_weighted": 1.0
+    },
+    {
+      "fold": 5,
+      "test_size": 10,
+      "accuracy": 1.0,
+      "precision_weighted": 1.0,
+      "recall_weighted": 1.0,
+      "f1_weighted": 1.0
+    }
+  ],
+  "accuracy": {
+    "mean": 1.0,
+    "std": 0.0,
+    "min": 1.0,
+    "max": 1.0
+  },
+  "precision_weighted": {
+    "mean": 1.0,
+    "std": 0.0,
+    "min": 1.0,
+    "max": 1.0
+  },
+  "recall_weighted": {
+    "mean": 1.0,
+    "std": 0.0,
+    "min": 1.0,
+    "max": 1.0
+  },
+  "f1_weighted": {
+    "mean": 1.0,
+    "std": 0.0,
+    "min": 1.0,
+    "max": 1.0
+  },
+  "duration_seconds": 3.950178400000368
+}

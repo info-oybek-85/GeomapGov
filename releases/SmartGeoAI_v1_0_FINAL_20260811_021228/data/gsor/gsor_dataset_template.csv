@@ -1,0 +1,6 @@
+﻿record_id,text,normalized_text,primary_problem,secondary_problems,primary_organization,alternative_organizations,latitude,longitude,district,historical_match,expert_verified
+GSOR-001,Mahallamizda ikki kundan beri svet yo'q.,svet yo'q,electricity,,Hududiy elektr tarmoqlari,,41.31,69.28,Guliston,,Ha
+GSOR-002,Daraxt elektr simiga qulab tushdi va yo'lni yopdi.,daraxt elektr simiga qulab tushdi va yo'lni yopdi,electricity,ecology;road,Hududiy elektr tarmoqlari,Ekologiya va obodonlashtirish;Yo'l boshqarmasi,41.32,69.27,Guliston,,Ha
+GSOR-003,Kanalizatsiya toshib yo'lni suv bosdi.,kanalizatsiya toshib yo'lni suv bosdi,water,road,Suv ta'minoti,Yo'l boshqarmasi,41.3,69.26,Guliston,,Ha
+GSOR-004,Svetofor 5 kundan beri ishlamayapti.,svetofor 5 kundan beri ishlamayapti,traffic,,Transport / Yo'l harakati xavfsizligi,,41.29,69.25,Guliston,,Ha
+GSOR-005,"Chiqindi olib ketilmayapti, ko'cha iflos.",chiqindi olib ketilmayapti ko'cha iflos,ecology,,Ekologiya va obodonlashtirish,,41.28,69.24,Guliston,,Ha

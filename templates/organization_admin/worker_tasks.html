@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Shaxsiy vazifalar | SmartGeoAI{% endblock %}
+{% block breadcrumb %}Xodimning shaxsiy kabineti{% endblock %}
+{% block page_title %}Mening vazifalarim{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block extra_css %}{{ block.super }}
+<style>
+#workerMap{width:100%;height:480px;min-height:480px;border-radius:18px;overflow:hidden;background:#eef2f7;position:relative}
+#workerMap .leaflet-tile{max-width:none!important;max-height:none!important;width:256px!important;height:256px!important}
+#workerMap .leaflet-marker-pane img,#workerMap .leaflet-shadow-pane img{max-width:none!important}
+.worker-hero{background:linear-gradient(135deg,#182848,#344d78);color:#fff;border-radius:20px;padding:24px}
+.metric-card{min-height:118px;border:0}.filter-card{border:0;border-radius:18px}.task-card{border:1px solid #e9ecef!important;border-left:5px solid #5e72e4!important;border-radius:14px;transition:.2s}.task-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(50,50,93,.1)}
+.task-meta{display:flex;flex-wrap:wrap;gap:8px 18px}.task-meta span{color:#67748e;font-size:.82rem}.filter-pill{border-radius:999px}
+.status-assigned{border-left-color:#5e72e4!important}.status-in_progress{border-left-color:#fb8c00!important}.status-pending_confirmation{border-left-color:#11cdef!important}.status-resolved{border-left-color:#2dce89!important}.status-reopened{border-left-color:#f5365c!important}
+</style>{% endblock %}
+{% block content %}
+<div class="worker-hero mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+ <div><div class="text-sm opacity-8">Shaxsiy ish maydoni</div><h3 class="text-white mb-1">{{ request.user.get_full_name|default:request.user.username }}</h3><div class="text-sm opacity-8">Bu sahifada faqat sizga biriktirilgan murojaatlar ko‘rinadi.</div></div>
+ <div class="text-end"><div class="text-xs opacity-8">Tashkilot</div><strong>{{ org.name }}</strong></div>
+</div>
+<div class="row mb-4">
+<div class="col-xl-3 col-md-6 mb-3"><div class="card metric-card"><div class="card-body"><div class="text-xs text-uppercase text-secondary">Faol vazifalar</div><div class="h3">{{ active_count }}</div><div class="text-xs text-secondary">Hozir bajarilishi kerak</div></div></div></div>
+<div class="col-xl-3 col-md-6 mb-3"><div class="card metric-card"><div class="card-body"><div class="text-xs text-uppercase text-secondary">Jarayonda</div><div class="h3 text-warning">{{ in_progress_count }}</div><div class="text-xs text-secondary">Ish boshlangan</div></div></div></div>
+<div class="col-xl-3 col-md-6 mb-3"><div class="card metric-card"><div class="card-body"><div class="text-xs text-uppercase text-secondary">Hal qilingan</div><div class="h3 text-success">{{ resolved_count }}</div><div class="text-xs text-secondary">Siz yakunlagan vazifalar</div></div></div></div>
+<div class="col-xl-3 col-md-6 mb-3"><div class="card metric-card"><div class="card-body"><div class="text-xs text-uppercase text-secondary">Muddati o‘tgan</div><div class="h3 text-danger">{{ overdue_count }}</div><div class="text-xs text-secondary">Zudlik bilan ko‘rib chiqing</div></div></div></div>
+</div>
+<div class="card filter-card mb-4"><div class="card-body">
+<form method="get" class="row g-3 align-items-end">
+ <div class="col-lg-3"><label class="form-label">Davr</label><select name="period" class="form-select"><option value="all">Barcha davr</option><option value="day" {% if selected_period == 'day' %}selected{% endif %}>Bugungi</option><option value="week" {% if selected_period == 'week' %}selected{% endif %}>Haftalik</option><option value="month" {% if selected_period == 'month' %}selected{% endif %}>Oylik</option><option value="year" {% if selected_period == 'year' %}selected{% endif %}>Yillik</option></select></div>
+ <div class="col-lg-3"><label class="form-label">Holat</label><select name="task_filter" class="form-select"><option value="active" {% if selected_filter == 'active' %}selected{% endif %}>Faol vazifalar</option><option value="all" {% if selected_filter == 'all' %}selected{% endif %}>Barchasi</option><option value="in_progress" {% if selected_filter == 'in_progress' %}selected{% endif %}>Jarayonda</option><option value="pending" {% if selected_filter == 'pending' %}selected{% endif %}>Tasdiq kutilmoqda</option><option value="resolved" {% if selected_filter == 'resolved' %}selected{% endif %}>Hal qilinganlar</option><option value="overdue" {% if selected_filter == 'overdue' %}selected{% endif %}>Muddati o‘tganlar</option><option value="unfinished" {% if selected_filter == 'unfinished' %}selected{% endif %}>Hal qilinmay qolganlar</option></select></div>
+ <div class="col-lg-4"><label class="form-label">Qidiruv</label><input name="q" value="{{ q }}" class="form-control" placeholder="Murojaat, fuqaro yoki telefon"></div>
+ <div class="col-lg-2 d-grid"><button class="btn btn-primary mb-0">Filtrlash</button></div>
+</form>
+<div class="mt-3 text-sm text-secondary">Natija: <b>{{ filtered_count }}</b> ta · Bugun {{ day_count }} · Hafta {{ week_count }} · Oy {{ month_count }} · Yil {{ year_count }}</div>
+</div></div>
+<div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center"><div><h6 class="mb-0">Mening murojaatlarim geoxaritasi</h6><div class="text-xs text-secondary">Xaritada faqat yuqoridagi filtrga mos shaxsiy vazifalaringiz.</div></div><button id="fitWorkerMap" class="btn btn-sm btn-outline-primary mb-0">Xaritani markazlash</button></div><div class="card-body"><div id="workerMap"></div></div></div>
+<div class="card"><div class="card-header"><h6 class="mb-0">Vazifalar ro‘yxati</h6></div><div class="card-body">
+{% for a in assignments %}<div class="task-card status-{{ a.report.status }} p-3 mb-3"><div class="d-flex flex-wrap justify-content-between gap-2"><div><b>{{ a.report.title|default:'Murojaat' }}</b> · {{ a.report.get_status_uz }}</div><span class="text-sm">Muddat: <b>{{ a.deadline_at|date:'d.m.Y H:i'|default:'-' }}</b></span></div><div class="task-meta mt-2"><span><b>Fuqaro:</b> {{ a.report.user.get_full_name|default:a.report.user.username }}</span><span><b>Telefon:</b> {{ a.report.user.phone_number|default:'-' }}</span><span><b>Biriktirilgan:</b> {{ a.assigned_at|date:'d.m.Y H:i' }}</span></div><p class="text-sm mt-2">{{ a.report.description|truncatechars:250 }}</p><a class="btn btn-sm btn-primary mb-0" href="{% url 'dashboard:org_report_detail' a.report.id %}">Vazifani ochish</a>{% if a.report.user.phone_number %}<a class="btn btn-sm btn-outline-success mb-0" href="tel:{{ a.report.user.phone_number }}">Qo‘ng‘iroq</a>{% endif %}{% if a.report.latitude and a.report.longitude %}<a class="btn btn-sm btn-outline-info mb-0" target="_blank" href="https://www.google.com/maps?q={{ a.report.latitude }},{{ a.report.longitude }}">Xaritada ochish</a>{% endif %}</div>{% empty %}<div class="text-center py-5 text-secondary">Tanlangan filtr bo‘yicha vazifa topilmadi.</div>{% endfor %}
+</div></div>
+{% endblock %}
+{% block scripts %}{{ block.super }}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
+const pts={{ points|safe }};const map=L.map('workerMap').setView([41.3111,69.2797],11);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);const bounds=[];const colors={assigned:'#5e72e4',in_progress:'#fb8c00',pending_confirmation:'#11cdef',resolved:'#2dce89',reopened:'#f5365c'};pts.forEach(p=>{const icon=L.divIcon({className:'',html:`<div style="width:20px;height:20px;border-radius:50%;background:${colors[p.status]||'#344767'};border:3px solid white;box-shadow:0 2px 8px #555"></div>`,iconSize:[20,20],iconAnchor:[10,10]});L.marker([p.lat,p.lng],{icon}).addTo(map).bindPopup(`<b>${p.status_label}</b><br>${p.citizen_name}<br>${p.citizen_phone||''}<br>${p.description.slice(0,140)}<br><a href="${p.detail_url}">Ochish</a>`);bounds.push([p.lat,p.lng])});function fit(){map.invalidateSize();if(bounds.length===1)map.setView(bounds[0],15);else if(bounds.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:15})}setTimeout(fit,250);setTimeout(fit,900);document.getElementById('fitWorkerMap').onclick=fit;
+</script>{% endblock %}

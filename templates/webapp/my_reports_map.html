@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Murojaatlarim xaritada</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <style>
+        :root {
+            --bg: var(--tg-theme-bg-color, #fff);
+            --text: var(--tg-theme-text-color, #111);
+            --hint: var(--tg-theme-hint-color, #666);
+            --card: var(--tg-theme-secondary-bg-color, #f4f4f5);
+            --accent: var(--tg-theme-button-color, #2481cc);
+            --accent-text: var(--tg-theme-button-text-color, #fff);
+            --border: rgba(0,0,0,0.1);
+        }
+        html, body {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg); color: var(--text); overflow: hidden;
+        }
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
+        .status-chips {
+            position: absolute; top: 8px; left: 8px; right: 8px;
+            z-index: 500; display: flex; gap: 6px; flex-wrap: wrap;
+            pointer-events: none;
+        }
+        .chip {
+            background: var(--card); color: var(--text);
+            padding: 6px 10px; border-radius: 14px; font-size: 12px;
+            border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            pointer-events: auto; cursor: pointer; user-select: none;
+        }
+        .chip.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+        .chip .dot {
+            display: inline-block; width: 8px; height: 8px; border-radius: 4px;
+            margin-right: 4px; vertical-align: 1px;
+        }
+        .marker-pin {
+            width: 26px; height: 26px; border-radius: 50%;
+            border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            display: block;
+        }
+        .sheet-backdrop {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.35);
+            z-index: 800; display: none;
+        }
+        .sheet {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            background: var(--bg); color: var(--text);
+            border-top-left-radius: 16px; border-top-right-radius: 16px;
+            padding: 16px; box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
+            z-index: 900; display: none; max-height: 70vh; overflow-y: auto;
+        }
+        .sheet.open, .sheet-backdrop.open { display: block; }
+        .sheet-handle {
+            width: 40px; height: 4px; background: var(--border);
+            border-radius: 2px; margin: 0 auto 12px;
+        }
+        .sheet h3 { margin: 0 0 6px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .status-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 12px; font-weight: 600;
+        }
+        .meta { color: var(--hint); font-size: 13px; margin: 4px 0; }
+        .desc { margin: 10px 0; white-space: pre-wrap; word-break: break-word; }
+        .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .btn {
+            flex: 1 1 auto; min-width: 120px;
+            padding: 10px 12px; border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            background: var(--card); color: var(--text);
+        }
+        .btn.primary { background: var(--accent); color: var(--accent-text); }
+        .btn.success { background: #22a76d; color: #fff; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .attachments { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .attachments a {
+            display: block; padding: 10px; text-align: center;
+            background: var(--card); border-radius: 8px; text-decoration: none;
+            color: var(--text); font-size: 13px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }
+        .empty {
+            position: absolute; top: 50%; left: 20px; right: 20px;
+            transform: translateY(-50%); text-align: center; color: var(--hint);
+        }
+        .loader {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 12px 20px; background: var(--card); border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="status-chips" id="chips">
+        <span class="chip active" data-status="all"><span class="dot" style="background:#888"></span>Barchasi <span id="cnt-all">0</span></span>
+        <span class="chip" data-status="new"><span class="dot" style="background:#e53935"></span>Yangi <span id="cnt-new">0</span></span>
+        <span class="chip" data-status="in_progress"><span class="dot" style="background:#f2b400"></span>Jarayonda <span id="cnt-in_progress">0</span></span>
+        <span class="chip" data-status="resolved"><span class="dot" style="background:#22a76d"></span>Hal qilindi <span id="cnt-resolved">0</span></span>
+    </div>
+    <div id="loader" class="loader">Yuklanmoqda…</div>
+    <div id="empty" class="empty" style="display:none;">Sizda hali murojaatlar yo‘q.</div>
+
+    <div class="sheet-backdrop" id="sheet-backdrop"></div>
+    <div class="sheet" id="sheet">
+        <div class="sheet-handle"></div>
+        <h3 id="s-title">Murojaat</h3>
+        <div class="meta"><span id="s-badge" class="status-badge"></span></div>
+        <div class="meta">🆔 <code id="s-id"></code></div>
+        <div class="meta" id="s-created"></div>
+        <div class="meta" id="s-resolved-at" style="display:none;"></div>
+        <div class="meta" id="s-org"></div>
+        <div class="desc" id="s-desc"></div>
+        <div class="attachments" id="s-attachments"></div>
+        <div class="actions">
+            <button class="btn primary" id="btn-directions">🧭 Yo‘nalish</button>
+            <button class="btn success" id="btn-resolve" style="display:none;">✅ Hal bo‘ldi</button>
+            <button class="btn" id="btn-close">Yopish</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script>
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        if (tg) { tg.ready(); tg.expand(); }
+
+        const params = new URLSearchParams(location.search);
+        const TOKEN = params.get('token') || '';
+        const API = params.get('api') || '/api';
+
+        const STATUS_COLOR = {
+            new: '#e53935',
+            in_progress: '#f2b400',
+            resolved: '#22a76d',
+            rejected: '#555',
+        };
+        const STATUS_LABEL = {
+            new: 'Yangi',
+            in_progress: 'Jarayonda',
+            resolved: 'Hal qilindi',
+            rejected: 'Rad etildi',
+        };
+
+        const map = L.map('map', { zoomControl: true, attributionControl: false })
+                     .setView([41.3111, 69.2797], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        const state = { reports: [], markers: [], filter: 'all', current: null };
+
+        function makeIcon(color) {
+            return L.divIcon({
+                className: '',
+                html: `<span class="marker-pin" style="background:${color}"></span>`,
+                iconSize: [26, 26],
+                iconAnchor: [13, 13],
+            });
+        }
+
+        async function fetchList(resolved) {
+            const url = `${API}/reports/mine/${resolved ? 'resolved/' : ''}`;
+            const r = await fetch(url, { headers: { 'Authorization': `Bearer ${TOKEN}` } });
+            if (!r.ok) throw new Error(`API ${r.status}`);
+            const data = await r.json();
+            return Array.isArray(data) ? data : (data.results || []);
+        }
+
+        function statusOf(r) {
+            return String(r.status || 'new').toLowerCase();
+        }
+
+        function renderMarkers() {
+            state.markers.forEach(m => map.removeLayer(m));
+            state.markers = [];
+
+            const filtered = state.reports.filter(r => {
+                if (state.filter === 'all') return true;
+                return statusOf(r) === state.filter;
+            });
+
+            const latlngs = [];
+            filtered.forEach(r => {
+                if (r.latitude == null || r.longitude == null) return;
+                const color = STATUS_COLOR[statusOf(r)] || '#888';
+                const m = L.marker([r.latitude, r.longitude], { icon: makeIcon(color) }).addTo(map);
+                m.on('click', () => openSheet(r));
+                state.markers.push(m);
+                latlngs.push([r.latitude, r.longitude]);
+            });
+
+            if (latlngs.length) {
+                map.fitBounds(latlngs, { padding: [50, 50], maxZoom: 14 });
+            }
+        }
+
+        function updateCounts() {
+            const counts = { all: state.reports.length, new: 0, in_progress: 0, resolved: 0 };
+            state.reports.forEach(r => {
+                const s = statusOf(r);
+                if (counts[s] !== undefined) counts[s]++;
+            });
+            Object.keys(counts).forEach(k => {
+                const el = document.getElementById(`cnt-${k}`);
+                if (el) el.textContent = counts[k];
+            });
+        }
+
+        function openSheet(r) {
+            state.current = r;
+            const s = statusOf(r);
+            const color = STATUS_COLOR[s] || '#888';
+            const label = STATUS_LABEL[s] || s;
+            document.getElementById('s-title').textContent = '📌 Murojaat';
+            const badge = document.getElementById('s-badge');
+            badge.textContent = label;
+            badge.style.background = color;
+            badge.style.color = '#fff';
+            document.getElementById('s-id').textContent = String(r.id || '').slice(0, 8);
+            const created = (r.created_at || '').replace('T', ' ').slice(0, 19);
+            document.getElementById('s-created').textContent = created ? `📅 Yuborilgan: ${created}` : '';
+            const resolvedEl = document.getElementById('s-resolved-at');
+            if (r.resolved_at) {
+                resolvedEl.textContent = `✅ Hal bo‘lgan: ${r.resolved_at.replace('T', ' ').slice(0, 19)}`;
+                resolvedEl.style.display = 'block';
+            } else {
+                resolvedEl.style.display = 'none';
+            }
+            const orgName = (r.organization && (r.organization.name || r.organization)) || r.organization_name || '';
+            document.getElementById('s-org').textContent = orgName ? `🏢 ${orgName}` : '';
+            document.getElementById('s-desc').textContent = r.description || '';
+
+            const attachContainer = document.getElementById('s-attachments');
+            attachContainer.innerHTML = '';
+            (r.attachments || []).forEach((a, i) => {
+                const url = a.file_url || a.file || '';
+                if (!url) return;
+                const a1 = document.createElement('a');
+                a1.href = url;
+                a1.target = '_blank';
+                a1.rel = 'noopener';
+                a1.textContent = `📎 ${a.type || 'fayl'} ${i + 1}`;
+                attachContainer.appendChild(a1);
+            });
+
+            const dirBtn = document.getElementById('btn-directions');
+            dirBtn.onclick = () => {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}`;
+                if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
+            };
+
+            const resolveBtn = document.getElementById('btn-resolve');
+            if (s !== 'resolved' && s !== 'rejected') {
+                resolveBtn.style.display = 'inline-block';
+                resolveBtn.disabled = false;
+                resolveBtn.onclick = onResolve;
+            } else {
+                resolveBtn.style.display = 'none';
+            }
+
+            document.getElementById('sheet').classList.add('open');
+            document.getElementById('sheet-backdrop').classList.add('open');
+        }
+
+        function closeSheet() {
+            document.getElementById('sheet').classList.remove('open');
+            document.getElementById('sheet-backdrop').classList.remove('open');
+            state.current = null;
+        }
+
+        async function onResolve() {
+            if (!state.current) return;
+            const btn = document.getElementById('btn-resolve');
+            btn.disabled = true;
+            btn.textContent = '⏳ Yuborilyapti…';
+            try {
+                const r = await fetch(`${API}/reports/${state.current.id}/resolve/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${TOKEN}` },
+                });
+                if (!r.ok) throw new Error(`API ${r.status}`);
+                state.current.status = 'resolved';
+                btn.textContent = '✅ Hal bo‘ldi';
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                await loadAll();
+                closeSheet();
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = '✅ Hal bo‘ldi';
+                alert('Xatolik: ' + e.message);
+            }
+        }
+
+        async function loadAll() {
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('empty').style.display = 'none';
+            try {
+                const [active, resolved] = await Promise.all([
+                    fetchList(false).catch(() => []),
+                    fetchList(true).catch(() => []),
+                ]);
+                const seen = new Set();
+                const combined = [];
+                [...active, ...resolved].forEach(r => {
+                    if (!seen.has(r.id)) { seen.add(r.id); combined.push(r); }
+                });
+                state.reports = combined;
+                updateCounts();
+                renderMarkers();
+                document.getElementById('empty').style.display = combined.length ? 'none' : 'block';
+            } catch (e) {
+                document.getElementById('empty').textContent = 'Xatolik: ' + e.message;
+                document.getElementById('empty').style.display = 'block';
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                state.filter = chip.dataset.status;
+                renderMarkers();
+            });
+        });
+        document.getElementById('btn-close').onclick = closeSheet;
+        document.getElementById('sheet-backdrop').onclick = closeSheet;
+
+        loadAll();
+    </script>
+</body>
+</html>

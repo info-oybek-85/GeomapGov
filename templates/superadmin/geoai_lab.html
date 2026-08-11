@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}GeoAI Lab | SmartGeoAI{% endblock %}
+{% block breadcrumb %}GeoAI Lab{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/smartgeoai-design-system.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="sg-hero mb-4">
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+    <div>
+      <div class="text-xs text-uppercase mb-1" style="opacity:.75">SmartGeoAI Scientific Workspace</div>
+      <h3 class="text-white mb-1">GeoAI Lab</h3>
+      <div style="opacity:.82">GeoAI, GSOR, Human-in-the-Loop, model baholash va ilmiy eksperimentlar markazi.</div>
+    </div>
+    <a href="{% url 'dashboard:platform_center' %}" class="btn btn-sm btn-outline-light mb-0">← Platform markazi</a>
+  </div>
+</div>
+
+<div class="sg-grid mb-4">
+
+  <div class="sg-card">
+    <div class="d-flex gap-3 align-items-center">
+      <div class="sg-icon bg-gradient-info text-white">🗺</div>
+      <div>
+        <h6 class="mb-0">GeoAI Analytics</h6>
+        <div class="sg-subtitle">GeoPriority, GeoRisk, hotspot va model metrikalari</div>
+      </div>
+    </div>
+    <div class="mt-3"><span class="sg-kpi">{{ geo_coverage }}%</span> <span class="sg-subtitle">geo qamrov</span></div>
+    <a href="{% url 'geoai:analytics' %}" class="btn btn-sm btn-outline-info mt-3 mb-0">Ochish →</a>
+  </div>
+
+  <div class="sg-card">
+    <div class="d-flex gap-3 align-items-center">
+      <div class="sg-icon bg-gradient-primary text-white">📊</div>
+      <div>
+        <h6 class="mb-0">Model Evaluation</h6>
+        <div class="sg-subtitle">Accuracy, F1, ROC-AUC, Confusion Matrix, K-Fold</div>
+      </div>
+    </div>
+    <div class="mt-3">
+      <span class="sg-chip"><span class="sg-dot" style="background:#5e72e4"></span>K-Fold</span>
+      <span class="sg-chip"><span class="sg-dot" style="background:#11cdef"></span>ROC-AUC</span>
+    </div>
+    <a href="{% url 'geoai:system_evaluation' %}" class="btn btn-sm btn-outline-primary mt-3 mb-0">Baholash →</a>
+  </div>
+
+  <div class="sg-card">
+    <div class="d-flex gap-3 align-items-center">
+      <div class="sg-icon bg-gradient-warning text-white">🧠</div>
+      <div>
+        <h6 class="mb-0">Expert Validation</h6>
+        <div class="sg-subtitle">Human-in-the-Loop tasdiqlash va verified dataset</div>
+      </div>
+    </div>
+    <div class="mt-3"><span class="sg-kpi">{{ verified_count }}</span> <span class="sg-subtitle">verified CSV</span></div>
+    <a href="{% url 'dashboard:expert_validation_queue' %}" class="btn btn-sm btn-outline-warning mt-3 mb-0">Tekshirish →</a>
+  </div>
+
+  <div class="sg-card">
+    <div class="d-flex gap-3 align-items-center">
+      <div class="sg-icon bg-gradient-success text-white">🧭</div>
+      <div>
+        <h6 class="mb-0">GSOR Routing</h6>
+        <div class="sg-subtitle">Primary + alternativ tashkilotlar Top-k ranking</div>
+      </div>
+    </div>
+    <div class="mt-3">
+      <span class="sg-chip">Top-1: <b>{{ gsor.top1_accuracy|default:"—" }}</b></span>
+      <span class="sg-chip">Top-3: <b>{{ gsor.top3_accuracy|default:"—" }}</b></span>
+      <span class="sg-chip">MRR: <b>{{ gsor.mrr|default:"—" }}</b></span>
+    </div>
+    <a href="{% url 'dashboard:gsor_center' %}" class="btn btn-sm btn-outline-success mt-3 mb-0">Natijalar →</a>
+  </div>
+
+  <div class="sg-card">
+    <div class="d-flex gap-3 align-items-center">
+      <div class="sg-icon bg-gradient-secondary text-white">🔬</div>
+      <div>
+        <h6 class="mb-0">Ablation Study</h6>
+        <div class="sg-subtitle">Semantic / Geo / History komponentlari hissasini taqqoslash</div>
+      </div>
+    </div>
+    <div class="mt-3 sg-subtitle">Keyingi GSOR v2 ilmiy eksperiment bloki.</div>
+    <button class="btn btn-sm btn-outline-secondary mt-3 mb-0" disabled>Tayyorlanmoqda</button>
+  </div>
+
+  <div class="sg-card">
+    <div class="d-flex gap-3 align-items-center">
+      <div class="sg-icon bg-gradient-dark text-white">📚</div>
+      <div>
+        <h6 class="mb-0">Research Evidence</h6>
+        <div class="sg-subtitle">Eksperimentlar, metrikalar va himoya uchun dalillar</div>
+      </div>
+    </div>
+    <div class="mt-3 sg-subtitle">{{ total_reports }} ta real murojaat bazasi mavjud.</div>
+    <button class="btn btn-sm btn-outline-dark mt-3 mb-0" disabled>v2 bosqichi</button>
+  </div>
+
+</div>
+
+<div class="card">
+  <div class="card-header pb-0">
+    <h6 class="mb-1">Ilmiy pipeline</h6>
+    <div class="sg-subtitle">SmartGeoAI model va routing modullarining nazorat qilinadigan hayot sikli.</div>
+  </div>
+  <div class="card-body">
+    <div class="sg-step"><div class="sg-icon bg-gradient-info text-white">1</div><div><b>Real murojaatlar</b><div class="sg-subtitle">Telegram va web orqali keladigan real ma'lumotlar.</div></div></div>
+    <div class="sg-step"><div class="sg-icon bg-gradient-primary text-white">2</div><div><b>AI / GSOR prediction</b><div class="sg-subtitle">Muammo turi va tashkilotlar ranking qilinadi.</div></div></div>
+    <div class="sg-step"><div class="sg-icon bg-gradient-warning text-white">3</div><div><b>Expert Validation</b><div class="sg-subtitle">Ekspert AI natijasini tasdiqlaydi yoki tuzatadi.</div></div></div>
+    <div class="sg-step"><div class="sg-icon bg-gradient-success text-white">4</div><div><b>Verified Dataset</b><div class="sg-subtitle">Tasdiqlangan yozuvlar ilmiy datasetga qo'shiladi.</div></div></div>
+    <div class="sg-step"><div class="sg-icon bg-gradient-dark text-white">5</div><div><b>Evaluation & Improvement</b><div class="sg-subtitle">K-Fold, Top-k, MRR va ablation study orqali model qayta baholanadi.</div></div></div>
+  </div>
+</div>
+{% endblock %}
