@@ -26,7 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+# config/settings.py ichida:
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv(
@@ -160,7 +162,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 AUTH_USER_MODEL = "users.User"
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGINS = [
+    "https://fastappeal.uz",
+    "https://www.fastappeal.uz",
+]
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Access tokenni 1 kunga qisqartirish
@@ -196,8 +204,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024
 CSRF_TRUSTED_ORIGINS = [
     "https://fastappeal.uz",
     "https://www.fastappeal.uz",
-    "http://fastappeal.uz",
-    "http://www.fastappeal.uz",
 ]
 
 # Nginx reverse-proxy ortida ishlaganimiz uchun
@@ -212,5 +218,20 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 # Ba'zi brauzerlarda login sahifasi kesh qilinib, eski CSRF token qolib ketmasin
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 kun
+
+
+# =========================
+# Production Security
+# =========================
+
+SECURE_SSL_REDIRECT = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "same-origin"
+
+# HSTS — hozircha sinov muddati
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = False
 
 SMARTGEOAI_TELEGRAM_BOT_URL = "https://t.me/AholiMurojatlariGeoxaritasi_bot"
